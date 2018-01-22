@@ -1,4 +1,5 @@
 require(quanTLC,quietly=TRUE)
+require(rhandsontable)
 
 fluidPage(
   titlePanel("",windowTitle = "quanTLC"),

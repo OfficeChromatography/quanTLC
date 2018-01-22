@@ -5,7 +5,7 @@
 # http://shiny.rstudio.com
 #
 require(quanTLC,quietly=TRUE)
-
+require(rhandsontable)
 
 dimension = data.frame(row.names = c("Plate width",
                                      "Migration front",
