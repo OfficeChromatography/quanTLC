@@ -4,7 +4,8 @@ require(rhandsontable)
 fluidPage(
   titlePanel("",windowTitle = "quanTLC"),
   tabsetPanel(type="pills",
-              tabPanel("Input/preprocessing",
+              tabPanel("Input and preprocessing",
+                       tags$head(tags$style(HTML(".shiny-output-error-validation {color: red;font-size: 24px}"))),
                        sidebarLayout(
                          sidebarPanel(width=3,
                                       # h3("Input"),
@@ -43,16 +44,16 @@ fluidPage(
                          )
                        )
               ),
-              tabPanel("Integration",
+              tabPanel("Integration and statistics",
                        sidebarLayout(
                          sidebarPanel(
-                           actionButton("Integration_show", "Integration options",icon = icon("edit")),
-                           bsModal("IntegrationModal", "Integration options", "Integration_show", size = "large",
-                                   uiOutput("Integration_ui_1")
-                           ),
-                           textInput("Integration_compound","Compound name","Compound"),
-                           checkboxInput("Integration_area_height","Check to use height mode",F),
-                           actionButton("Integration_action","Select the peak")
+                           # actionButton("Integration_show", "Integration options",icon = icon("edit")),
+                           # bsModal("IntegrationModal", "Integration options", "Integration_show", size = "large",
+                           #         uiOutput("Integration_ui_1")
+                           # ),
+                           uiOutput("Integration_ui_1"),
+                           # textInput("Integration_compound","Compound name","Compound"),
+                           actionButton("Integration_action","Select the peak",icon=icon("flask"))
                          ),
                          mainPanel(
                            numericInput("Integration_plot_chrom_select","Track to plot",1),
@@ -60,17 +61,17 @@ fluidPage(
                              id = "brush.Integration_plot_chrom",
                              direction = "x",
                              resetOnNew = T
-                           )),
-                           tableOutput("Integration_table")
+                           ))
+                           # ,tableOutput("Integration_table")
                          )
-                       )
-              ),
-              tabPanel("Statistique",
+                       ),
                        sidebarLayout(
                          sidebarPanel(width=6,
                                       rHandsontableOutput("Stat_batch"),
                                       uiOutput("Stat_column"),
-                                      actionButton("Stat_action","Apply the batch"),
+                                      checkboxInput("Stat_quadratic","Use a quadratic model",F),
+                                      checkboxInput("Stat_origin","Pass by the origin)",F),
+                                      actionButton("Stat_action","Apply the batch",icon=icon("flask")),
                                       verbatimTextOutput("Stat_summary")
                          ),
                          mainPanel(width=6,
@@ -81,9 +82,24 @@ fluidPage(
               tabPanel("Report",
                        sidebarLayout(
                          sidebarPanel(width=6,
-                                      p("incoming")
+                                      checkboxGroupInput("Report_options","Inculde in report",choices = c("Chromatogram","Dimension table","Preprocessing options","Integration options","Statistic options","Video-densitograms","Model summary","Batch","Calibration curve"),
+                                                         selected = c(
+                                                           "Chromatogram"
+                                                           ,"Dimension table"
+                                                           ,"Preprocessing options"
+                                                           ,"Integration options"
+                                                           ,"Statistic options"
+                                                           ,"Model summary"
+                                                           ,"Video-densitograms"
+                                                           ,"Batch"
+                                                           ,"Calibration curve"
+                                                           )),
+                                      radioButtons('reportformat', 'Document format', c('PDF', 'HTML', "MS word"='Word'),
+                                                   inline = TRUE),
+                                      downloadButton('downloadReport')
                          ),
                          mainPanel(width=6,
+                                   verbatimTextOutput("Report_reac"),
                                    p("incoming")
                          )
                        )

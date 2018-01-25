@@ -21,7 +21,7 @@ output$Preprocess_ui_1 = renderUI({
                 helpText(   a("Help for this feature",target="_blank",
                               href="http://cran.r-project.org/web/packages/baseline/baseline.pdf")
                 ),
-                selectizeInput("baseline", "Type of baseline", choices=c("als","fillPeaks","irls","lowpass","medianWindow","modpolyfit","peakDetection","rfbaseline","rollingBall"),select=NULL),
+                selectizeInput("baseline", "Type of baseline", choices=c("als","fillPeaks","irls","lowpass","medianWindow","modpolyfit","peakDetection","rollingBall"),select=NULL),
                 conditionalPanel(condition="input.baseline=='als'",
                                  numericInput("lambda.1","lambda: 2nd derivative constraint",5),
                                  numericInput("p","p: weighting of positive residuals",0.05),

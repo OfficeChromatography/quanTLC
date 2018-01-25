@@ -35,5 +35,5 @@ devtools::install_github("jrowen/rhandsontable") ## this package is available on
 
 Then, run this command to launch the application
 ```r
-quanTLC::run_quanTLC()
+quanTLC::run.quanTLC()
 ```

@@ -1,15 +1,6 @@
-##' Function to plot the 3 channels of an array as chromatograms,
-##'
-##' @param data a 3D array of dim[3] = 3
-##' @param x the x coordinate to look at
-##' @param normalization either or not normalisation should happen before plotting the chromatograms
-##' @param edge to apply a mean and avoid noise
-##' @param ... extra parameters to be passed to the plot function
-##' @author Dimitri Fichou
-##' @export
-##'
 
-plot_track <- function(data,normalization=T,...){
+
+chrom.pict <- function(data,x,normalization=T,edge=0,...){
   if(length(dim(data)) == 3){
     data.save <- data
     if(edge != 0){

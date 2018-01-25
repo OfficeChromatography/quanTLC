@@ -46,6 +46,9 @@ Baseline.correction <- function(data,input){
   data.tot <- data
   for(i in seq(4)){
     data<-data.tot[,,i]
+    if(is.vector(data)){
+      dim(data) = c(1,length(data))
+    }
     if(input$method == "als"){data<-baseline(data,method=input$method,lambda=input$lambda.1,p=input$p,maxit=input$maxit.1)}
     if(input$method == "fillPeaks"){data<-baseline(data,method=input$method,lambda=input$lambda.2,hwi=input$hwi,it=input$it,int=input$int)}
     if(input$method == "irls"){data<-baseline(data,method=input$method,lambda1=input$lambda1,lambda2=input$lambda2,maxit=input$maxit.2,wi=input$wi)}
