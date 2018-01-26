@@ -1,6 +1,6 @@
 
-f.plot.array<-function(data,id,hauteur,Zf,dist.bas,reconstruct=T,inverse=F,ylim.raster=1.3,main=NULL,...){
-  xlim = c(dim(data)[2],0)
+f.plot.array<-function(data,id,hauteur,Zf,dist.bas,reconstruct=T,inverse=F,ylim.raster=1.3,main=NULL,xlim=NULL,...){
+  if(is.null(xlim)){xlim = c(dim(data)[2],0)}
   if(reconstruct==T){
     plot(as.vector(data[id,,1]),
          ylim=c(0,ylim.raster),xlim=xlim,main=main,xlab=expression(italic(R)['F']),ylab='Pixel intensity [AU]',xaxt="n",

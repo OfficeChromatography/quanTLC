@@ -3,8 +3,8 @@ output$Preprocess_ui_1 = renderUI({
          column(4,
                 # h4("Median filter"),
                 # numericInput('preprocess.medianfilter','Half-size of the filtering window',3),
-                h4('Gamma correction'),
-                numericInput('preprocess.gammacorrection','Value',2),
+                # h4('Gamma correction'),
+                # numericInput('preprocess.gammacorrection','Value',2),
                 h4("Smoothing"),
                 helpText(   a("Help for this feature",target="_blank",
                               href="https://www.rdocumentation.org/packages/prospectr/versions/0.1.3/topics/savitzkyGolay?")

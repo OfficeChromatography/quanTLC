@@ -8,3 +8,5 @@ admin.R
 .RData
 /www
 /test
+.csv
+.zip
