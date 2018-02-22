@@ -10,9 +10,10 @@ fluidPage(
                          sidebarPanel(width=3,
                                       # h3("Input"),
                                       fileInput("Input_image","Select a chromatogram image or a Rdata file"),
+                                      actionButton("Demo_file","Load the demonstration file"),
                                       # fileInput("Input_method","Rdata method file save in a previous session"),
-                                      checkboxInput("Input_convention","Change for convention from the interior of the band",F),
                                       rHandsontableOutput("Input_dimension"),
+                                      checkboxInput("Input_convention","Change to distance calculated from the middle of the band",F),
                                       actionButton("Input_action","Extract the video densitograms",icon=icon("flask"))
 
                          ),
@@ -24,7 +25,7 @@ fluidPage(
                          sidebarPanel(width=3,
                                       actionButton("Preprocess_show", "Preprocessing options",icon = icon("edit")),
                                       selectizeInput('Preprocess.order','Select the preprocessing algorithms (order is important)',
-                                                     choices=c("Negatif" = "Negatif",#"Gamma correction" = 'gammaCorrection',
+                                                     choices=c("Negative peak inversion" = "Negatif",#"Gamma correction" = 'gammaCorrection',
                                                                'Smoothing' = 'Smoothing',
                                                                'Baseline correction' = 'Baseline.correction','Warping' = 'Warping'),
                                                      selected='',multiple=T),
@@ -35,7 +36,7 @@ fluidPage(
 
                          ),
                          mainPanel(width=9,
-                                   numericInput("Preprocess_plot_chrom_select","Track to plot",1),
+                                   numericInput("Preprocess_plot_chrom_select","Selection of the track",1),
                                    column(6,
                                           plotOutput("Preprocess_plot_chrom_before")
                                    ),
@@ -57,9 +58,9 @@ fluidPage(
                            actionButton("Integration_action","Select the peak",icon=icon("flask")),
                            actionButton("Integration_one_by_one_show","Integration one by one",icon=icon("edit")),
                            bsModal("Integration_one_by_one_Modal", "Integration one by one", "Integration_one_by_one_show", size = "large",
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_previous","previous")),
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",numericInput("Integration_one_by_one_select","Track",1)),
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_next","next")),
+                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_previous","Previous")),
+                                   div(style="display: inline-block;vertical-align:top; width: 150px;",numericInput("Integration_one_by_one_select","Selection of the track",1)),
+                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_next","Next")),
                                    plotOutput("Integration_one_by_one_chrom",brush = brushOpts(
                                      id = "brush.Integration_one_by_one_chrom",
                                      direction = "x",
@@ -69,7 +70,7 @@ fluidPage(
                            )
                          ),
                          mainPanel(
-                           numericInput("Integration_plot_chrom_select","Track to plot",1),
+                           numericInput("Integration_plot_chrom_select","Selection of the track",1),
                            plotOutput("Integration_plot_chrom",brush = brushOpts(
                              id = "brush.Integration_plot_chrom",
                              direction = "x",
@@ -82,8 +83,8 @@ fluidPage(
                          sidebarPanel(width=6,
                                       rHandsontableOutput("Stat_batch"),
                                       uiOutput("Stat_column"),
-                                      checkboxInput("Stat_quadratic","Use a quadratic model",F),
-                                      checkboxInput("Stat_origin","Pass by the origin)",F),
+                                      checkboxInput("Stat_quadratic","Use quadratic regression",F),
+                                      # checkboxInput("Stat_origin","Pass by the origin)",F),
                                       actionButton("Stat_action","Apply the batch",icon=icon("flask")),
                                       verbatimTextOutput("Stat_summary")
                          ),
@@ -107,25 +108,23 @@ fluidPage(
                                                            ,"Batch"
                                                            ,"Calibration curve"
                                                            )),
-                                      radioButtons('reportformat', 'Document format', c('PDF', 'HTML', "MS word"='Word'),
+                                      radioButtons('reportformat', 'Document format', c('PDF', 'HTML', "MS Word"='Word'),
                                                    inline = TRUE),
                                       downloadButton('downloadReport',label = "Report"),
                                       hr(),
-                                      downloadButton("downloadCheckpoint",label = "Checkpoint"),
-                                      p("Upload this checkpoint file instead of the picture in the input tab"),
+                                      downloadButton("downloadCheckpoint",label = "Save data"),
+                                      p("Upload this Rdata file instead of the chromatogram"),
                                       hr(),
-                                      downloadButton("downloadChrom",label = "Chromatograms")
+                                      downloadButton("downloadChrom",label = "Export as CSV format")
                          ),
-                         mainPanel(width=6,
-                                   # verbatimTextOutput("Report_reac"),
-                                   p("incoming")
-                         )
+                         mainPanel()
                        )
               ),
-              tabPanel("Video manual",
-                       helpText(   a("Instruction for local installation available here",target="_blank",
+              tabPanel("Help",
+                       helpText(   a("Instruction for local installation",target="_blank",
                                      href="https://github.com/DimitriF/quantlc")
                        ),
+                       h4("Video manual"),
                        HTML('<video src="out.mp4" controls/>')
               )
   )

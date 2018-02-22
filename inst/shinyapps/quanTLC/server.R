@@ -7,17 +7,20 @@
 require(quanTLC,quietly=TRUE)
 require(rhandsontable)
 
-dimension = data.frame(row.names = c("Plate width [mm]",
-                                     "Migration front [mm]",
-                                     "Distance to lower edge [mm]",
-                                     "Plate length [mm]",
-                                     "First application position [mm]",
-                                     "Band length [mm]",
-                                     "Distance between track [mm]",
-                                     "Edge cut [mm]",
-                                     "Number of band",
-                                     "Cropping [mm]"),
-                       Value = as.numeric(c(100,70,8,100,27,6,2,2,5,0)))
+options(shiny.maxRequestSize=1000*1024^2)
+
+dimension = data.frame(row.names = c(
+  "Plate length [mm]",
+  "Plate width [mm]",
+  "Cropping [mm]",
+  "Migration front [mm]",
+  "Distance to lower edge [mm]",
+  "First application position [mm]",
+  "Band length [mm]",
+  "Distance between tracks [mm]",
+  "Edge cut [mm]",
+  "Number of bands"),
+  Value = as.numeric(c(100,100,0,70,8,27,6,2,2,5)))
 
 default_preprocess_options = list(
   Smoothing=list(window.size = 15,poly.order=1,diff.order=0),
@@ -52,7 +55,7 @@ shinyServer(function(input, output,session) {
     Integration_mode = NULL,
     model=NULL,
     Stat_quadratic = NULL,
-    Stat_origin = NULL,
+    # Stat_origin = NULL,
     Stat_column = NULL
   )
   output$downloadCheckpoint <- downloadHandler(
@@ -71,7 +74,7 @@ shinyServer(function(input, output,session) {
                          Integration_mode = reac$Integration_mode,
                          model=reac$model,
                          Stat_quadratic = reac$Stat_quadratic,
-                         Stat_origin = reac$Stat_origin,
+                         # Stat_origin = reac$Stat_origin,
                          Stat_column = reac$Stat_column
       ))
       save(list='data',file=con)
@@ -93,14 +96,11 @@ shinyServer(function(input, output,session) {
       reac$Integration_mode = data$Integration_mode
       reac$model=data$model
       reac$Stat_quadratic = data$Stat_quadratic
-      reac$Stat_origin = data$Stat_origin
+      # reac$Stat_origin = data$Stat_origin
       reac$Stat_column = data$Stat_column
       
       ## need to update preprocess options also
       updateSelectizeInput(session,"Preprocess.order",
-                           # choices=c("Negatif" = "Negatif",#"Gamma correction" = 'gammaCorrection',
-                           #           'Smoothing' = 'Smoothing',
-                           #           'Baseline correction' = 'Baseline.correction','Warping' = 'Warping'),
                            selected=reac$Preprocess.order)
       # if("Smoothing" %in% reac$Preprocess.options){
         updateNumericInput(session,"window.size",value = reac$Preprocess.options$Smoothing$window.size)
@@ -140,12 +140,55 @@ shinyServer(function(input, output,session) {
       reac$Integration_mode = NULL
       reac$model=NULL
       reac$Stat_quadratic = NULL
-      reac$Stat_origin = NULL
+      # reac$Stat_origin = NULL
       reac$Stat_column = NULL
     }
     
   })
-
+  observeEvent(input$Demo_file,{
+      load("www/quanTLC.Rdata")
+      reac$image = data$image
+      reac$image.name = data$image.name
+      reac$batch = data$batch
+      reac$dimension = data$dimension
+      reac$extracted = data$extracted
+      reac$Preprocess.order = data$Preprocess.order
+      reac$Preprocess.options = data$Preprocess.options
+      reac$preprocessed = data$preprocessed
+      reac$Integration_start = data$Integration_start
+      reac$Integration_stop=data$Integration_stop
+      reac$Integration_mode = data$Integration_mode
+      reac$model=data$model
+      reac$Stat_quadratic = data$Stat_quadratic
+      # reac$Stat_origin = data$Stat_origin
+      reac$Stat_column = data$Stat_column
+      
+      ## need to update preprocess options also
+      updateSelectizeInput(session,"Preprocess.order",
+                           selected=reac$Preprocess.order)
+      # if("Smoothing" %in% reac$Preprocess.options){
+      updateNumericInput(session,"window.size",value = reac$Preprocess.options$Smoothing$window.size)
+      updateNumericInput(session,"poly.order",value = reac$Preprocess.options$Smoothing$poly.order)
+      updateNumericInput(session,"diff.order",value = reac$Preprocess.options$Smoothing$diff.order)
+      # }
+      # if("Baseline.correction" %in% reac$Preprocess.options){
+      updateSelectizeInput(session,"baseline", "Type of baseline", #choices=c("als","fillPeaks","irls","lowpass","medianWindow","modpolyfit","peakDetection","rollingBall"),
+                           selected = reac$Preprocess.options$Baseline.correction$method)
+      for(i in names(reac$Preprocess.options$Baseline.correction)){
+        if(i != "method"){
+          updateNumericInput(session,i,value = as.numeric(reac$Preprocess.options$Baseline.correction[i]))
+        }
+      }
+      updateSelectizeInput(session,"warpmethod","Warping method",#choices=(c("ptw",'dtw')),
+                           selected = reac$Preprocess.options$Warping$warpmethod)
+      if(reac$Preprocess.options$Warping$warpmethod == "ptw"){
+        updateNumericInput(session,"ptw.warp.ref",value = reac$Preprocess.options$Warping$ptw.warp.ref)
+      }else{
+        updateNumericInput(session,"dtw.warp.ref",value = reac$Preprocess.options$Warping$dtw.warp.ref)
+        updateCheckboxInput(session,"dtw.split",value = reac$Preprocess.options$Warping$dtw.split)
+      }
+    
+  })
   #### Input ####
   output$Input_dimension = renderRHandsontable({
     rhandsontable(reac$dimension, rowHeaderWidth = 200) %>%
@@ -153,16 +196,16 @@ shinyServer(function(input, output,session) {
   })
   observeEvent(input$Input_action,{
     reac$dimension$Value = as.numeric(hot_to_r(input$Input_dimension)$Value)
-    nbr.band=reac$dimension["Number of band",]
+    nbr.band=reac$dimension["Number of bands",]
     largeur = reac$dimension["Plate length [mm]",]
     dist.gauche=reac$dimension["First application position [mm]",]
     tolerance=reac$dimension["Edge cut [mm]",]
     band=reac$dimension["Band length [mm]",]
-    ecart=reac$dimension["Distance between track [mm]",]
+    ecart=reac$dimension["Distance between tracks [mm]",]
     Cropping=reac$dimension["Cropping [mm]",]
     validate(
-      need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"too much bands"),
-      need(nbr.band >= 1,"not enough bands")
+      need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"Too much bands"),
+      need(nbr.band >= 1,"Not enough bands")
     )
     
     reac$extracted = f.eat.image(reac$image,if(input$Input_convention){"ATS-4"}else{"linomat"},largeur=largeur,dist.gauche=dist.gauche,band = band,
@@ -178,23 +221,23 @@ shinyServer(function(input, output,session) {
     # reac$Integration_table=NULL
     reac$model=NULL
     reac$Stat_quadratic = NULL
-    reac$Stat_origin = NULL
+    # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
   output$Input_plot_raster = renderPlot({
-    validate(need(!is.null(reac$image),"upload the image chromatogram"))
+    validate(need(!is.null(reac$image),"Upload the image chromatogram"))
     par(mar=c(0,0,0,0),xaxs="i",yaxs="i")
 
     dimension = dimension
     dimension$Value = as.numeric(hot_to_r(input$Input_dimension)$Value)
 
     Cropping = dimension["Cropping [mm]",]
-    nbr.band=dimension["Number of band",]
+    nbr.band=dimension["Number of bands",]
     largeur = dimension["Plate length [mm]",]
     dist.gauche=dimension["First application position [mm]",]
     tolerance=dimension["Edge cut [mm]",]
     band=dimension["Band length [mm]",]
-    ecart=dimension["Distance between track [mm]",]
+    ecart=dimension["Distance between tracks [mm]",]
     width = dimension["Plate width [mm]",]
     Zf = dimension["Migration front [mm]",]
     dist.bas = dimension["Distance to lower edge [mm]",]
@@ -207,8 +250,8 @@ shinyServer(function(input, output,session) {
     }
     
     validate(
-      need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"too much bands"),
-      need(nbr.band >= 1,"not enough bands")
+      need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"Too much bands"),
+      need(nbr.band >= 1,"Not enough bands")
       )
     
 
@@ -224,7 +267,8 @@ shinyServer(function(input, output,session) {
 
   ### Preprocess ####
   output$Preprocess_plot_chrom_before = renderPlot({
-    validate(need(!is.null(reac$extracted),"extract the video densitograms"))
+    validate(need(!is.null(reac$extracted),"Extract the video densitograms"),
+             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection"))
     width = reac$dimension["Plate width [mm]",]
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
@@ -236,9 +280,10 @@ shinyServer(function(input, output,session) {
     validate(
       need(input$window.size %% 2 == 1, "The window size must be an odd value"),
       need(input$window.size > input$poly.order, "The window size must be greater than the polynomial order"),
-      need(input$poly.order > input$diff.order, "The polynomial order must be greater than the differential order")
+      need(input$poly.order > input$diff.order, "The polynomial order must be greater than the differential order"),
+      need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection")
     )
-    validate(need(!is.null(reac$preprocessed),"preprocess the video densitograms"))
+    validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms"))
     width = reac$dimension["Plate width [mm]",]
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
@@ -283,7 +328,7 @@ shinyServer(function(input, output,session) {
 
     reac$Preprocess.order = input$Preprocess.order
     reac$preprocessed = f.preprocess(reac$extracted,preprocess.order = reac$Preprocess.order,preprocess.option = reac$Preprocess.options)
-    nbr.band=reac$dimension["Number of band",]
+    nbr.band=reac$dimension["Number of bands",]
     reac$batch = data.frame(Track = paste0("Track ",seq(nbr.band)),Standard = rep(T,nbr.band),quantity = seq(nbr.band))
     colnames(reac$batch)[3] = "Quantity [AU]"
     reac$Integration_start = c()
@@ -292,7 +337,7 @@ shinyServer(function(input, output,session) {
     # reac$Integration_table=NULL
     reac$model=NULL
     reac$Stat_quadratic = NULL
-    reac$Stat_origin = NULL
+    # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
 
@@ -300,13 +345,14 @@ shinyServer(function(input, output,session) {
   ### Integration ####
   output$Integration_ui_1 = renderUI({
     tagList(
-    checkboxInput("Integration_auto","Automatic integration",F),
-    # conditionalPanel("!input.Integration_auto",
-    #                  p("The peak will be selected based on the manual integration")),
-    conditionalPanel("input.Integration_auto",
-                     p("Not available yet"))
-    ,checkboxInput("Integration_area_height","Check to use height mode",F)
-    # ,radioButtons("Integration_channel","Channel",choices = c("red"=1,"green"=2,"blue"=3,"grey"=4)),
+    # checkboxInput("Integration_auto","Automatic integration",F),
+    # # conditionalPanel("!input.Integration_auto",
+    # #                  p("The peak will be selected based on the manual integration")),
+    # conditionalPanel("input.Integration_auto",
+    #                  p("Not available yet"))
+    # ,
+    checkboxInput("Integration_area_height","Use peak height",F)
+    # ,radioButtons("Integration_channel","Channel",choices = c("red"=1,"green"=2,"blue"=3,"gray"=4)),
     # checkboxInput("Integration_height","Use height instead of area",F)
     )
   })
@@ -323,20 +369,21 @@ shinyServer(function(input, output,session) {
     # dist.bas = reac$dimension["Distance to lower edge",]
     # comp_name = round(seq((width-dist.bas)/(Zf-dist.bas),-dist.bas/(Zf-dist.bas),length.out=dim(reac$preprocessed)[2])[mean(c(brush$xmin,brush$xmax))],2)
     # comp_name = paste0("Intensity-","area-","Rf_",comp_name)
-    comp_name = "I"
+    comp_name = "Intensity"
     
     truc = apply(reac$preprocessed[,round(brush$xmin):round(brush$xmax),],c(1,3),if(input$Integration_area_height){max}else{sum})
-    colnames(truc) = paste0(comp_name,c(" red [AU]"," green [AU]"," blue [AU]"," grey [AU]"))
+    colnames(truc) = paste0(comp_name,c(" red [AU]"," green [AU]"," blue [AU]"," gray [AU]"))
     updateTextInput(session, "Integration_compound", value = paste0("Compound ",length(reac$Integration_start)+1))
     reac$batch = cbind(reac$batch[,1:3],truc)
     reac$Integration_mode = if(input$Integration_area_height){"height"}else{"area"}
     reac$model = NULL
     reac$Stat_quadratic = NULL
-    reac$Stat_origin = NULL
+    # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
   output$Integration_plot_chrom = renderPlot({
-    validate(need(!is.null(reac$preprocessed),"preprocess the video densitograms"))
+    validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms"),
+             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection"))
     width = reac$dimension["Plate width [mm]",]
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
@@ -358,7 +405,8 @@ shinyServer(function(input, output,session) {
     # print(truc)
   })
   output$Integration_one_by_one_chrom = renderPlot({
-    validate(need(!is.null(reac$preprocessed),"preprocess the video densitograms"))
+    validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms"),
+             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection"))
     i = as.numeric(input$Integration_one_by_one_select)
     width = reac$dimension["Plate width [mm]",]
     Zf = reac$dimension["Migration front [mm]",]
@@ -384,26 +432,32 @@ shinyServer(function(input, output,session) {
   #### Stat ####
   output$Stat_batch = renderRHandsontable({
     validate(need(ncol(reac$batch) >3,"Do the integration"))
+    reac$batch$`Quantity [AU]` = as.numeric(reac$batch$`Quantity [AU]`)
     rhandsontable(reac$batch,rowHeaders = NULL) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
       hot_col(colnames(reac$batch)[c(1,4:ncol(reac$batch))], readOnly = TRUE)
   })
   output$Stat_column = renderUI({
     validate(need(ncol(reac$batch) >3,"Do the integration"))
-    selectizeInput("Stat_column","Compound and channel to use",choice=colnames(reac$batch)[4:ncol(reac$batch)])
+    selectizeInput("Stat_column","Select channel",choice=colnames(reac$batch)[4:7],selected = if(!is.null(reac$Stat_column)){reac$Stat_column}else{colnames(reac$batch)[4]})
   })
   observeEvent(input$Stat_action,{
     validate(need(ncol(reac$batch) >3,"Do the integration"))
     reac$batch = hot_to_r(input$Stat_batch)[,1:7]
     data = data.frame(x=reac$batch[,"Quantity [AU]"],x2=(reac$batch[,"Quantity [AU]"])^2,y=reac$batch[,input$Stat_column],y2=(reac$batch[,input$Stat_column])^2)
     
-    if(!input$Stat_quadratic && input$Stat_origin){
-      form = formula(x ~ y +1)
-    }else if(!input$Stat_quadratic && !input$Stat_origin){
+    # if(!input$Stat_quadratic && input$Stat_origin){
+    #   form = formula(x ~ y +1)
+    # }else if(!input$Stat_quadratic && !input$Stat_origin){
+    #   form = formula(x ~ y)
+    # }else if(input$Stat_quadratic && !input$Stat_origin){
+    #   form = formula(x ~ y +y2+1)
+    # }else if(input$Stat_quadratic && input$Stat_origin){
+    #   form = formula(x ~ y +y2)
+    # }
+    if(!input$Stat_quadratic){
       form = formula(x ~ y)
-    }else if(input$Stat_quadratic && !input$Stat_origin){
-      form = formula(x ~ y +y2+1)
-    }else if(input$Stat_quadratic && input$Stat_origin){
+    }else if(input$Stat_quadratic){
       form = formula(x ~ y +y2)
     }
     reac$model = lm(form,data = data,subset = reac$batch$Standard)
@@ -412,7 +466,7 @@ shinyServer(function(input, output,session) {
     reac$batch[,input$Stat_column] = reac$batch[,input$Stat_column]
     reac$batch[["Prediction [AU]"]] = truc
     reac$Stat_quadratic = if(input$Stat_quadratic){"quadratic"}else{"linear"}
-    reac$Stat_origin = input$Stat_origin
+    # reac$Stat_origin = input$Stat_origin
     reac$Stat_column = input$Stat_column
   })
   output$Stat_plot = renderPlot({
@@ -424,7 +478,7 @@ shinyServer(function(input, output,session) {
     data$y2 = data$y^2
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = reac$Stat_column,pch = 4,col=(!reac$batch$Standard)+1)
     # abline(reac$model)
-    timevalues <- seq(min(data$y), max(data$y), 0.1)
+    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
     pred <- predict(reac$model,data.frame(y=timevalues, y2=timevalues^2))
     lines(pred,timevalues)
   })
@@ -433,10 +487,10 @@ shinyServer(function(input, output,session) {
     print(summary(reac$model))
     if(reac$Stat_quadratic == "linear"){
       truc = coef(summary(reac$model))
-      print(paste0("LOD: ",abs(3.3*truc[1,2]/truc[2,1])," [AU]"))
-      print(paste0("LOQ: ",abs(10*truc[1,2]/truc[2,1])," [AU]"))
+      cat(paste0("LOD: ",round(abs(3.3*truc[1,2]/truc[2,1]),4)," [AU]\n\n"))
+      cat(paste0("LOQ: ",round(abs(10*truc[1,2]/truc[2,1]),4)," [AU]"))
     }else{
-      print("LOD and LOQ not available for quadratic models")
+      cat("LOD and LOQ not available for quadratic models")
     }
   })
   

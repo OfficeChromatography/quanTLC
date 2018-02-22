@@ -75,13 +75,13 @@ output$Preprocess_ui_1 = renderUI({
                                  helpText(   a("Help for this feature",target="_blank",
                                                href="https://www.rdocumentation.org/packages/ptw/versions/1.9-11/topics/ptw")
                                  ),
-                                 numericInput('ptw.warp.ref',"track of reference",1)
+                                 numericInput('ptw.warp.ref',"Track of reference",1)
                 ),
                 conditionalPanel(condition="input.warpmethod=='dtw'",
                                  helpText(   a("Help for this feature",target="_blank",
                                                href="https://www.rdocumentation.org/packages/dtw/versions/1.18-1/topics/dtw?")
                                  ),
-                                 numericInput('dtw.warp.ref',"track of reference",1),
+                                 numericInput('dtw.warp.ref',"Track of reference",1),
                                  checkboxInput('dtw.split','Do the alignment on the 4 channels separately.',F)
                 )
          )

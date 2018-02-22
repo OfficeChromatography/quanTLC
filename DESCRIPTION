@@ -4,9 +4,9 @@ Title: Shiny app for quantification from video densitometry data of high-perform
 Version: 0.1.0
 Author: Fichou Dimitri
 Maintainer: Fichou Dimitri <dimitrifichou@gmail.com>
-Description: Software for video densitometry analysis. The software takes one chromatogram image, dimension parameters from the sample and development steps and extract the video densitograms. Then a step of preprocessing is made (baseline correction but more eventually like peak alignment, smoothing etc...), followed by a step of peak detection and integration. Finally, a linear or quadratic model is fit which give access to LOD, LOQ, R2, RMSE and allow to predict new samples. 
+Description: Software for video densitometry analysis. The software takes one chromatogram image, dimension parameters from the sample and development steps and extract the video densitograms. Then a step of preprocessing is made (baseline correction but more eventually like peak alignment, smoothing etc...), followed by a step of peak integration. Finally, a linear or quadratic model is fit which give access to LOD, LOQ, R2, RMSE and allow to predict new samples. 
 License: GPL
-Depends: jpeg, png, tiff, abind, shiny, shinydashboard, magrittr, markdown, baseline, chemCal, dtw, ptw, prospectr, plyr, shinyBS, pracma
+Depends: jpeg, png, tiff, abind, shiny, shinydashboard, magrittr, markdown, baseline, dtw, ptw, prospectr, plyr, shinyBS, bmp
 Encoding: UTF-8
 LazyData: TRUE
 RoxygenNote: 6.0.1
