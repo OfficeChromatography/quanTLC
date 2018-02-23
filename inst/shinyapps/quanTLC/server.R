@@ -345,12 +345,12 @@ shinyServer(function(input, output,session) {
   ### Integration ####
   output$Integration_ui_1 = renderUI({
     tagList(
-    # checkboxInput("Integration_auto","Automatic integration",F),
-    # # conditionalPanel("!input.Integration_auto",
-    # #                  p("The peak will be selected based on the manual integration")),
-    # conditionalPanel("input.Integration_auto",
-    #                  p("Not available yet"))
-    # ,
+    checkboxInput("Integration_auto","Automatic integration",F),
+    # conditionalPanel("!input.Integration_auto",
+    #                  p("The peak will be selected based on the manual integration")),
+    conditionalPanel("input.Integration_auto",
+                     p("Not available yet"))
+    ,
     checkboxInput("Integration_area_height","Use peak height",F)
     # ,radioButtons("Integration_channel","Channel",choices = c("red"=1,"green"=2,"blue"=3,"gray"=4)),
     # checkboxInput("Integration_height","Use height instead of area",F)
@@ -472,7 +472,7 @@ shinyServer(function(input, output,session) {
   output$Stat_summary = renderPrint({
     validate(need(!is.null(reac$model),"Apply the batch"))
     print(summary(reac$model))
-    if(is.null(model$model$`I(x^2)`)){
+    if(is.null(reac$model$model$`I(x^2)`)){
       truc = coef(summary(reac$model))
       cat(paste0("LOD: ",round(abs(3.3*truc[1,2]/truc[2,1]),4)," [AU]\n\n"))
       cat(paste0("LOQ: ",round(abs(10*truc[1,2]/truc[2,1]),4)," [AU]"))
