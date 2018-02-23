@@ -444,11 +444,10 @@ shinyServer(function(input, output,session) {
   observeEvent(input$Stat_action,{
     validate(need(ncol(reac$batch) >3,"Do the integration"))
     reac$batch = hot_to_r(input$Stat_batch)[,1:7]
-    data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,input$Stat_column])
-
-    reac$model = #lm(form,data = data,subset = reac$batch$Standard)
-      calibrate(y~x, data, test.higher.orders = T, max.order = 2, p.crit = 0.05, 
-              F.test = "partial", subset=reac$batch$Standard, method = "qr", model = T)
+    data = data.frame(x=reac$batch[reac$batch[,"Standard"],"Quantity [AU]"],y=reac$batch[reac$batch[,"Standard"],input$Stat_column])
+    reac$model = calibrate(y~x, data, test.higher.orders = T, max.order = 2, p.crit = 0.05, 
+                           F.test = "partial", method = "qr", model = T)
+    
     truc = inversePredictCalibrate(reac$model,reac$batch[,input$Stat_column])[,2] %>% round(4)
     
     reac$batch[,input$Stat_column] = reac$batch[,input$Stat_column]
