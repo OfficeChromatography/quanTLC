@@ -162,7 +162,7 @@ if("Batch" %in% input$Report_options && !is.null(reac$Integration_start) ){
 ## model summary
 if("Model summary" %in% input$Report_options && !is.null(reac$model)){
   print(summary(reac$model))
-    if(reac$Stat_quadratic == "linear"){
+    if(is.null(reac$model$model$`I(x^2)`)){
       truc = coef(summary(reac$model))
       cat(paste0("LOD: ",round(abs(3.3*truc[1,2]/truc[2,1]),4)," [AU]\n\n"))
       cat(paste0("LOQ: ",round(abs(10*truc[1,2]/truc[2,1]),4)," [AU]"))
@@ -183,7 +183,7 @@ if("Calibration curve" %in% input$Report_options && !is.null(reac$model)){
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = reac$Stat_column,pch = 4,col=(!reac$batch$Standard)+1)
     # abline(reac$model)
     timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
-    pred <- predict(reac$model,data.frame(y=timevalues, y2=timevalues^2))
+    pred <- inversePredictCalibrate(reac$model,timevalues)[,2]
     lines(pred,timevalues)
 }
 ```

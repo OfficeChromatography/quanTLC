@@ -54,7 +54,7 @@ shinyServer(function(input, output,session) {
     Integration_stop=c(),
     Integration_mode = NULL,
     model=NULL,
-    Stat_quadratic = NULL,
+    # Stat_quadratic = NULL,
     # Stat_origin = NULL,
     Stat_column = NULL
   )
@@ -73,7 +73,7 @@ shinyServer(function(input, output,session) {
                          Integration_stop=reac$Integration_stop,
                          Integration_mode = reac$Integration_mode,
                          model=reac$model,
-                         Stat_quadratic = reac$Stat_quadratic,
+                         # Stat_quadratic = reac$Stat_quadratic,
                          # Stat_origin = reac$Stat_origin,
                          Stat_column = reac$Stat_column
       ))
@@ -95,7 +95,7 @@ shinyServer(function(input, output,session) {
       reac$Integration_stop=data$Integration_stop
       reac$Integration_mode = data$Integration_mode
       reac$model=data$model
-      reac$Stat_quadratic = data$Stat_quadratic
+      # reac$Stat_quadratic = data$Stat_quadratic
       # reac$Stat_origin = data$Stat_origin
       reac$Stat_column = data$Stat_column
       
@@ -139,7 +139,7 @@ shinyServer(function(input, output,session) {
       reac$Integration_stop=c()
       reac$Integration_mode = NULL
       reac$model=NULL
-      reac$Stat_quadratic = NULL
+      # reac$Stat_quadratic = NULL
       # reac$Stat_origin = NULL
       reac$Stat_column = NULL
     }
@@ -159,7 +159,7 @@ shinyServer(function(input, output,session) {
       reac$Integration_stop=data$Integration_stop
       reac$Integration_mode = data$Integration_mode
       reac$model=data$model
-      reac$Stat_quadratic = data$Stat_quadratic
+      # reac$Stat_quadratic = data$Stat_quadratic
       # reac$Stat_origin = data$Stat_origin
       reac$Stat_column = data$Stat_column
       
@@ -220,7 +220,7 @@ shinyServer(function(input, output,session) {
     reac$Integration_mode = NULL
     # reac$Integration_table=NULL
     reac$model=NULL
-    reac$Stat_quadratic = NULL
+    # reac$Stat_quadratic = NULL
     # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
@@ -336,7 +336,7 @@ shinyServer(function(input, output,session) {
     reac$Integration_mode = NULL
     # reac$Integration_table=NULL
     reac$model=NULL
-    reac$Stat_quadratic = NULL
+    # reac$Stat_quadratic = NULL
     # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
@@ -377,7 +377,7 @@ shinyServer(function(input, output,session) {
     reac$batch = cbind(reac$batch[,1:3],truc)
     reac$Integration_mode = if(input$Integration_area_height){"height"}else{"area"}
     reac$model = NULL
-    reac$Stat_quadratic = NULL
+    # reac$Stat_quadratic = NULL
     # reac$Stat_origin = NULL
     reac$Stat_column = NULL
   })
@@ -444,28 +444,16 @@ shinyServer(function(input, output,session) {
   observeEvent(input$Stat_action,{
     validate(need(ncol(reac$batch) >3,"Do the integration"))
     reac$batch = hot_to_r(input$Stat_batch)[,1:7]
-    data = data.frame(x=reac$batch[,"Quantity [AU]"],x2=(reac$batch[,"Quantity [AU]"])^2,y=reac$batch[,input$Stat_column],y2=(reac$batch[,input$Stat_column])^2)
-    
-    # if(!input$Stat_quadratic && input$Stat_origin){
-    #   form = formula(x ~ y +1)
-    # }else if(!input$Stat_quadratic && !input$Stat_origin){
-    #   form = formula(x ~ y)
-    # }else if(input$Stat_quadratic && !input$Stat_origin){
-    #   form = formula(x ~ y +y2+1)
-    # }else if(input$Stat_quadratic && input$Stat_origin){
-    #   form = formula(x ~ y +y2)
-    # }
-    if(!input$Stat_quadratic){
-      form = formula(x ~ y)
-    }else if(input$Stat_quadratic){
-      form = formula(x ~ y +y2)
-    }
-    reac$model = lm(form,data = data,subset = reac$batch$Standard)
-    truc = predict(reac$model,data)
+    data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,input$Stat_column])
+
+    reac$model = #lm(form,data = data,subset = reac$batch$Standard)
+      calibrate(y~x, data, test.higher.orders = T, max.order = 2, p.crit = 0.05, 
+              F.test = "partial", subset=reac$batch$Standard, method = "qr", model = T)
+    truc = inversePredictCalibrate(reac$model,reac$batch[,input$Stat_column])[,2] %>% round(4)
     
     reac$batch[,input$Stat_column] = reac$batch[,input$Stat_column]
     reac$batch[["Prediction [AU]"]] = truc
-    reac$Stat_quadratic = if(input$Stat_quadratic){"quadratic"}else{"linear"}
+    # reac$Stat_quadratic = if(input$Stat_quadratic){"quadratic"}else{"linear"}
     # reac$Stat_origin = input$Stat_origin
     reac$Stat_column = input$Stat_column
   })
@@ -479,13 +467,13 @@ shinyServer(function(input, output,session) {
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = reac$Stat_column,pch = 4,col=(!reac$batch$Standard)+1)
     # abline(reac$model)
     timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
-    pred <- predict(reac$model,data.frame(y=timevalues, y2=timevalues^2))
+    pred <- inversePredictCalibrate(reac$model,timevalues)[,2]
     lines(pred,timevalues)
   })
   output$Stat_summary = renderPrint({
     validate(need(!is.null(reac$model),"Apply the batch"))
     print(summary(reac$model))
-    if(reac$Stat_quadratic == "linear"){
+    if(is.null(model$model$`I(x^2)`)){
       truc = coef(summary(reac$model))
       cat(paste0("LOD: ",round(abs(3.3*truc[1,2]/truc[2,1]),4)," [AU]\n\n"))
       cat(paste0("LOQ: ",round(abs(10*truc[1,2]/truc[2,1]),4)," [AU]"))
