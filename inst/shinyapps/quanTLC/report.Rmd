@@ -102,15 +102,17 @@ if("Preprocessing options" %in% input$Report_options && length(reac$Preprocess.o
     kable(truc, caption = 'Preprocessing options',col.names = c("Name","Value"))
   }
 ## integration options
-if("Integration options" %in% input$Report_options && !is.null(reac$Integration_start)){
+if("Integration options" %in% input$Report_options && length(reac$Integration_start) > 0){
+  if(!reac$Integration_auto){
     width = reac$dimension["Plate width [mm]",]
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
     Integration_start = round(seq((width-dist.bas)/(Zf-dist.bas),-dist.bas/(Zf-dist.bas),length.out=dim(reac$preprocessed)[2])[mean(reac$Integration_start)],2)*100
     Integration_stop = round(seq((width-dist.bas)/(Zf-dist.bas),-dist.bas/(Zf-dist.bas),length.out=dim(reac$preprocessed)[2])[mean(reac$Integration_stop)],2)*100
-  
-  truc <- cbind(c("Peak start [$\\textit{hR}_F$]","Peak end [$\\textit{hR}_F$]","Integration"), c(Integration_start,Integration_stop,paste0("Peak ",reac$Integration_mode)))
-  
+    truc <- cbind(c("Automatic","Peak start [$\\textit{hR}_F$]","Peak end [$\\textit{hR}_F$]","Integration"), c(reac$Integration_auto,Integration_start,Integration_stop,paste0("Peak ",reac$Integration_mode)))
+  }else{
+    
+  }
   rownames(truc) <- seq(nrow(truc))
   kable(truc, caption = 'Integration options',col.names = c("Name","Value"))
 }
@@ -150,8 +152,10 @@ if("Video-densitograms" %in% input$Report_options && !is.null(reac$preprocessed)
 ```{r Integrations}
 ## batch
 
-if("Batch" %in% input$Report_options && !is.null(reac$Integration_start) ){
-  kable(reac$batch[,2:ncol(reac$batch)], caption = 'Batch',align = "c",escape=F,row.names = T)
+if("Batch" %in% input$Report_options && !is.null(reac$batch) ){
+  kable(t(reac$batch), caption = 'Batch',align = "c",escape=F,row.names = T)
+    # kable(reac$batch[,2:ncol(reac$batch)], caption = 'Batch',align = "c",escape=F,row.names = T)
+
 }
 
 ```

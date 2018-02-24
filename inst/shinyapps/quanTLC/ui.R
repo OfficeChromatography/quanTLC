@@ -6,6 +6,7 @@ fluidPage(
   tabsetPanel(type="pills",
               tabPanel("Input and preprocessing",
                        tags$head(tags$style(HTML(".shiny-output-error-validation {color: red;font-size: 24px}"))),
+                       useShinyalert(),
                        sidebarLayout(
                          sidebarPanel(width=3,
                                       # h3("Input"),
@@ -18,7 +19,8 @@ fluidPage(
 
                          ),
                          mainPanel(width=9,
-                                   plotOutput("Input_plot_raster")
+                                   plotOutput("Input_plot_raster",click = "click_Input_plot_raster",dblclick = "dblclick_Input_plot_raster"),
+                                   bsTooltip("Input_plot_raster","Once the number of band is set, click in the middle of the first band to infere the first applciation position and double click on the last band to infere the distance between track.")
                          )
                        ),
                        sidebarLayout(
@@ -48,35 +50,21 @@ fluidPage(
               ),
               tabPanel("Integration and statistics",
                        sidebarLayout(
-                         sidebarPanel(
-                           # actionButton("Integration_show", "Integration options",icon = icon("edit")),
-                           # bsModal("IntegrationModal", "Integration options", "Integration_show", size = "large",
-                           #         uiOutput("Integration_ui_1")
-                           # ),
-                           uiOutput("Integration_ui_1"),
-                           # textInput("Integration_compound","Compound name","Compound"),
-                           actionButton("Integration_action","Select peak by brushing",icon=icon("flask")),
-                           actionButton("Integration_one_by_one_show","Integration track by track",icon=icon("edit")),
-                           bsModal("Integration_one_by_one_Modal", "Integration one by one", "Integration_one_by_one_show", size = "large",
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_previous","Previous")),
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",numericInput("Integration_one_by_one_select","Selection of the track",1)),
-                                   div(style="display: inline-block;vertical-align:top; width: 150px;",actionButton("Integration_one_by_one_next","Next")),
-                                   plotOutput("Integration_one_by_one_chrom",brush = brushOpts(
-                                     id = "brush.Integration_one_by_one_chrom",
-                                     direction = "x",
-                                     resetOnNew = T
-                                   )),
-                                   p("Brush each plot separatly and the integration will be automatically updated")
-                           )
+                         sidebarPanel(width = 3,
+                           uiOutput("Integration_ui_1")
+                           
                          ),
-                         mainPanel(
+                         mainPanel(width=9,
                            numericInput("Integration_plot_chrom_select","Selection of the track",1),
-                           plotOutput("Integration_plot_chrom",brush = brushOpts(
-                             id = "brush.Integration_plot_chrom",
-                             direction = "x",
-                             resetOnNew = T
-                           ))
-                           # ,tableOutput("Integration_table")
+                           column(6,
+                                  plotOutput("Integration_plot_1",click = "click_Integration_plot_1",height = "200px"),
+                                  plotOutput("Integration_plot_2",click = "click_Integration_plot_2",height = "200px")
+                                  ),
+                           column(6,
+                                  plotOutput("Integration_plot_3",click = "click_Integration_plot_3",height = "200px"),
+                                  plotOutput("Integration_plot_4",click = "click_Integration_plot_4",height = "200px")
+                                  )
+                           
                          )
                        ),
                        sidebarLayout(
@@ -85,10 +73,13 @@ fluidPage(
                                       uiOutput("Stat_column"),
                                       # checkboxInput("Stat_quadratic","Use quadratic regression",F),
                                       # checkboxInput("Stat_origin","Pass by the origin)",F),
-                                      actionButton("Stat_action","Apply the batch",icon=icon("flask")),
+                                      # actionButton("Stat_action","Apply the batch",icon=icon("flask")),
+                                      actionButton("Stat_remove_all","Remove all selected peaks",icon=icon("remove")),
+                                      actionButton("Stat_remove_last","Remove last selected peak",icon=icon("remove")),
                                       verbatimTextOutput("Stat_summary")
                          ),
                          mainPanel(width=6,
+                                   uiOutput("Stat_plot_select"),
                                    plotOutput("Stat_plot")
                          )
                        )
