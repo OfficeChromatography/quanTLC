@@ -5,6 +5,10 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(dpi=300, cache=F,echo=F,warning=F,message=F,autodep=T)
 library(knitr)
+require(stargazer)
+format = switch(
+        input$reportformat, PDF = 'latex', HTML = 'html', Word = 'docx'
+      )
 ```
 
 ```{r Input,fig.width = 7,fig.height = 3.9}
@@ -31,10 +35,16 @@ if(input$Input_convention){ # this put everybody back to linomat convention
 ## Input image with ablines
 if("Chromatogram" %in% input$Report_options){
   par(mar=c(0,0,2,0),xaxs="i",yaxs="i")
-  raster(reac$image,xlim= c(0,200/largeur*dim(reac$image)[2]),main=if(is.null(input$Input_image)){"Demonstration file"}else{reac$image.name})
+  raster(reac$image,xlim= c(0,200/largeur*dim(reac$image)[2]),main=if(is.null(reac$image.name)){"Demonstration file"}else{reac$image.name})
   
-  abline(h=dim(reac$image)[1]/width*dist.bas)
-  abline(h=dim(reac$image)[1]/width*Zf)
+  if(reac$double){
+      abline(h=dim(reac$image)[1]/width*dist.bas)
+      abline(h=dim(reac$image)[1]/width*(width-dist.bas))
+      abline(h=dim(reac$image)[1]/width*Zf)
+    }else{
+      abline(h=dim(reac$image)[1]/width*dist.bas)
+      abline(h=dim(reac$image)[1]/width*Zf)
+    }
   for(i in c(0:(nbr.band-1))){
     abline(v=(dim(reac$image)[2]/largeur*((dist.gauche+tolerance)+i*(band+ecart))),col="green")
     abline(v=(dim(reac$image)[2]/largeur*((dist.gauche+band-tolerance)+i*(band+ecart))),col="red")
@@ -43,7 +53,7 @@ if("Chromatogram" %in% input$Report_options){
 
 ## dimension table
 if("Dimension table" %in% input$Report_options){
-  kable(dimension, caption = 'Dimensions')
+  kable(dimension, caption = 'Dimensions')##need convention here
 }
 ```
 
@@ -102,27 +112,13 @@ if("Preprocessing options" %in% input$Report_options && length(reac$Preprocess.o
     kable(truc, caption = 'Preprocessing options',col.names = c("Name","Value"))
   }
 ## integration options
-if("Integration options" %in% input$Report_options && length(reac$Integration_start) > 0){
-  if(!reac$Integration_auto){
-    width = reac$dimension["Plate width [mm]",]
-    Zf = reac$dimension["Migration front [mm]",]
-    dist.bas = reac$dimension["Distance to lower edge [mm]",]
-    Integration_start = round(seq((width-dist.bas)/(Zf-dist.bas),-dist.bas/(Zf-dist.bas),length.out=dim(reac$preprocessed)[2])[mean(reac$Integration_start)],2)*100
-    Integration_stop = round(seq((width-dist.bas)/(Zf-dist.bas),-dist.bas/(Zf-dist.bas),length.out=dim(reac$preprocessed)[2])[mean(reac$Integration_stop)],2)*100
-    truc <- cbind(c("Automatic","Peak start [$\\textit{hR}_F$]","Peak end [$\\textit{hR}_F$]","Integration"), c(reac$Integration_auto,Integration_start,Integration_stop,paste0("Peak ",reac$Integration_mode)))
-  }else{
-    
-  }
+if("Integration options" %in% input$Report_options && !is.null(reac$Integration$Integration_nups)){ 
+  truc <- cbind(c("nups","ndowns","minpeakheight","npeaks"), 
+                unlist(reac$Integration[1:4]))
   rownames(truc) <- seq(nrow(truc))
   kable(truc, caption = 'Integration options',col.names = c("Name","Value"))
 }
 
-## stat options
-if("Statistic options" %in% input$Report_options && !is.null(reac$model)){
-  truc <- cbind(c("Regression","Channel"), c(reac$Stat_quadratic,reac$Stat_column))
-  rownames(truc) <- seq(nrow(truc))
-  kable(truc, caption = 'Statistic options',col.names = c("Name","Value"))
-}
 ```
 
 
@@ -130,10 +126,10 @@ if("Statistic options" %in% input$Report_options && !is.null(reac$model)){
 
 if("Video-densitograms" %in% input$Report_options && !is.null(reac$preprocessed)){
   ## before and after preprocess with integration boundaries after
-  width = reac$dimension["Plate width [mm]",]
+  width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
   Zf = reac$dimension["Migration front [mm]",]
   dist.bas = reac$dimension["Distance to lower edge [mm]",]
-  nbr.band=reac$dimension["Number of bands",]
+  nbr.band=reac$nbr.band
   par(mar=c(2.5,2.5,2,0),mgp=c(1.5,0.5,0),mfrow = c(if(nbr.band>=10){10}else{nbr.band},2),cex=0.6)
   for(i in seq(nbr.band)){
     f.plot.array(reac$extracted,id = i,
@@ -149,45 +145,109 @@ if("Video-densitograms" %in% input$Report_options && !is.null(reac$preprocessed)
 
 \tiny
 
-```{r Integrations}
+```{r PeakList}
 ## batch
 
-if("Batch" %in% input$Report_options && !is.null(reac$batch) ){
-  kable(t(reac$batch), caption = 'Batch',align = "c",escape=F,row.names = T)
-    # kable(reac$batch[,2:ncol(reac$batch)], caption = 'Batch',align = "c",escape=F,row.names = T)
-
+if("Peak list" %in% input$Report_options && !is.null(reac$Integration$PeakList) ){
+  if(nrow(reac$Integration$PeakList) != 0){
+    d = reac$Integration$PeakList[,1:7]
+    d$Channel = c("red","green","blue","gray")[d$Channel]
+    kable(d, caption = 'Peat list',align = "c",escape=F,row.names = F)
+  }else{
+    print("No peak integrated, perform the integration")
+  }
 }
 
 ```
 
 \normalsize
 
-```{r comment=NA}
+\pagebreak
+
+```{r, results='asis',fig.height=3}
+if("Peak list for each sample" %in% input$Report_options && !is.null(reac$Integration$PeakList)){
+  ## before and after preprocess with integration boundaries after
+  width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
+  Zf = reac$dimension["Migration front [mm]",]
+  dist.bas = reac$dimension["Distance to lower edge [mm]",]
+  nbr.band=reac$nbr.band
+  par(mar=c(2.5,2.5,2,0),mgp=c(1.5,0.5,0),mfrow = c(2,2),cex=0.6)
+  for(id in seq_len(nbr.band)){
+    for(channel in seq(4)){
+      f.plot.array(reac$preprocessed,id = id,
+                   hauteur = width,Zf = Zf,dist.bas = dist.bas,reconstruct = F,channel = channel,main=c("Red channel","Green channel","Blue channel","Grayscale")[channel])
+      for(i in seq_len(nrow(reac$Integration$PeakList))){
+        if(reac$Integration$PeakList$Channel[i] == channel && reac$Integration$PeakList$Track[i] == id){
+          abline(v=reac$Integration$PeakList[i,8:10],col=c("green","red","black"))
+        }
+      }
+      abline(h=0)
+    }
+    d = reac$Integration$PeakList[,1:7]
+    d = d[d$Track == id,]
+    d$Channel = c("red","green","blue","gray")[d$Channel]
+    kable(d, caption = paste0("Peak list - Track ",id),align = "c",row.names = F) %>% print()
+    
+    cat("\n\n\\pagebreak\n")
+  }
+}
+
+```
+
+
+```{r comment=F,fig.height=3,fig.width=3.5,results="asis",message=F}
+
+
 ## model summary
-if("Model summary" %in% input$Report_options && !is.null(reac$model)){
-  print(summary(reac$model))
-    if(is.null(reac$model$model$`I(x^2)`)){
-      truc = coef(summary(reac$model))
+if("Regression results" %in% input$Report_options && !is.null(reac$model)){
+  choices = colnames(reac$batch)[seq(from=4,by=2,length.out = (ncol(reac$batch)-3)/2)]
+  par(mgp=c(1.5,0.5,0),mar=c(2.5,2.5,2,0),cex=0.8)
+  for(i in choices){
+    
+    if(input$reportformat == 'latex'){
+      cat("\n\n\\twocolumn\n")
+    }else{
+      cat('\n\n<div class="column-left">')
+    }
+    
+    data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,i])
+    data$x[!reac$batch$Standard] = reac$batch[,paste0("Prediction ",i)][!reac$batch$Standard]
+    plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = "Intensity [AU]",pch = 4,col=(!reac$batch$Standard)+1,main=i)
+    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
+    pred <- inversePredictCalibrate(reac$model[[i]],timevalues)[,2]
+    lines(pred,timevalues)
+    # if(input$reportformat == 'latex'){
+    #   cat("\n")
+    # }else{
+    #   cat('\n\n</div>')
+    #   cat('\n\n<div class="column-right">')
+    # }
+    
+    # reac$model[[i]] %>% summary %>% print
+    stargazer(reac$model[[i]], type=format,header=FALSE,no.space=T, title="Summary", single.row=TRUE,digits=4)
+    cat("\n")
+    truc = coef(summary(reac$model[[i]]))
+    if(nrow(truc) == 2){
       cat(paste0("LOD: ",round(abs(3.3*truc[1,2]/truc[2,1]),4)," [AU]\n\n"))
       cat(paste0("LOQ: ",round(abs(10*truc[1,2]/truc[2,1]),4)," [AU]"))
     }else{
       cat("LOD and LOQ not available for quadratic models")
     }
+    # if(input$reportformat == 'latex'){
+    #   cat("\n\n\\onecolumn\n")
+    # }else{
+    #   cat('\n\n</div>')
+    #   cat("\n")
+    # }
+    d = reac$batch[,c(colnames(reac$batch)[1:3],i,paste0("Prediction ",i))]
+    colnames(d) = gsub(pattern = "hRF",replacement = "${hR}_F$",x=colnames(d))
+    kable(d, caption = colnames(d)[4],align = "c",escape=F,row.names = T) %>% print
+    
+  cat("\n\n\\pagebreak\n") ## don;t work because of results="asis" not compatible with lm summary
+  }
+  
+
 }
 
 ```
 
-```{r}
-## calibration curve
-if("Calibration curve" %in% input$Report_options && !is.null(reac$model)){
-    data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,reac$Stat_column])
-    data$x[!reac$batch$Standard] = reac$batch[,"Prediction [AU]"][!reac$batch$Standard]
-    data$x2=data$x^2
-    data$y2 = data$y^2
-    plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = reac$Stat_column,pch = 4,col=(!reac$batch$Standard)+1)
-    # abline(reac$model)
-    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
-    pred <- inversePredictCalibrate(reac$model,timevalues)[,2]
-    lines(pred,timevalues)
-}
-```

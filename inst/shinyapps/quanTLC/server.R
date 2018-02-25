@@ -48,8 +48,12 @@ shinyServer(function(input, output,session) {
   reac = reactiveValues(
     image = f.read.image("www/plate_168_dev_RT_10ms.jpg"),
     image.name = NULL,
+    img_click = 0,
     batch = NULL,
     dimension = dimension,
+    convention=F,
+    double=F,
+    nbr.band=NULL,
     extracted = NULL,
     Preprocess.order = NULL,
     Preprocess.options = default_preprocess_options,
@@ -65,6 +69,9 @@ shinyServer(function(input, output,session) {
                          image.name = reac$image.name,
                          batch = reac$batch,
                          dimension = reac$dimension,
+                         convention=reac$convention,
+                         double = reac$double,
+                         nbr.band=reac$nbr.band,
                          extracted = reac$extracted,
                          Preprocess.order = reac$Preprocess.order,
                          Preprocess.options = reac$Preprocess.options,
@@ -82,11 +89,21 @@ shinyServer(function(input, output,session) {
       reac$image.name = data$image.name
       reac$batch = data$batch
       reac$dimension = data$dimension
+      if(!is.null(data$convention)){reac$convention=data$convention}
+      if(!is.null(data$double)){reac$double=data$double}
+      if(!is.null(data$nbr.band)){reac$nbr.band = data$nbr.band}
       reac$extracted = data$extracted
       reac$Preprocess.order = data$Preprocess.order
       reac$Preprocess.options = data$Preprocess.options
       reac$preprocessed = data$preprocessed
-      reac$Integration = data$Integration
+      if(!is.null(reac$Integration)){
+        reac$Integration = data$Integration
+      }else{
+        reac$Integration = list(PeakList = data.frame())
+        shinyalert("Warning!", "Rdata file from a previous version, integration not saved.", type = "warning", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+      }
+      updateCheckboxInput(session,"Input_convention",value=reac$convention)
+      updateCheckboxInput(session,"Input_double",value=reac$double)
       reac$model=data$model
       
       ## preprocess options
@@ -121,6 +138,9 @@ shinyServer(function(input, output,session) {
     }else{
       reac$image =f.read.image(input$Input_image$datapath)
       reac$image.name = input$Input_image$name
+      reac$convention = F
+      reac$double = F
+      reac$nbr.band = NULL
       reac$batch = NULL
       reac$extracted = NULL
       reac$Preprocess.order = NULL
@@ -133,17 +153,24 @@ shinyServer(function(input, output,session) {
   })
 
   observeEvent(input$Demo_file,{
-      load("www/quanTLC.Rdata")
+    if(input$Demo_file != "None"){
+      load(paste0("www/",input$Demo_file))
       reac$image = data$image
       reac$image.name = data$image.name
       reac$batch = data$batch
       reac$dimension = data$dimension
+      reac$convention = data$convention
+      if(!is.null(data$double)) reac$double = data$double
+      if(!is.null(data$double)){reac$nbr.band = data$nbr.band}else{reac$nbr.band = reac$dimension["Number of bands",]}
       reac$extracted = data$extracted
       reac$Preprocess.order = data$Preprocess.order
       reac$Preprocess.options = data$Preprocess.options
       reac$preprocessed = data$preprocessed
       reac$Integration = data$Integration
       reac$model=data$model
+      
+      updateCheckboxInput(session,"Input_convention",value=reac$convention)
+      updateCheckboxInput(session,"Input_double",value=reac$double)
       
       ## need to update preprocess options also
       updateSelectizeInput(session,"Preprocess.order",
@@ -169,8 +196,7 @@ shinyServer(function(input, output,session) {
         updateNumericInput(session,"dtw.warp.ref",value = reac$Preprocess.options$Warping$dtw.warp.ref)
         updateCheckboxInput(session,"dtw.split",value = reac$Preprocess.options$Warping$dtw.split)
       }
-      updateCheckboxInput(session,"Integration_auto",value=reac$Integration_auto)
-    
+    }
   })
   #### Input ####
   output$Input_dimension = renderRHandsontable({
@@ -190,14 +216,21 @@ shinyServer(function(input, output,session) {
     #   need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"Too much bands."),
     #   need(nbr.band >= 1,"Not enough bands.")
     # )
+    if(input$Input_convention){ # this put everybody back to linomat convention
+      dist.gauche<-dist.gauche-band/2
+      ecart<-ecart-band
+    }
     if(nbr.band >= ceiling((largeur-dist.gauche)/(band+ecart))){
       shinyalert("Error!", "Too much bands.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }else if(nbr.band < 1){
       shinyalert("Error!", "Not enough bands.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }else{
-      reac$extracted = f.eat.image(reac$image,if(input$Input_convention){"ATS-4"}else{"linomat"},largeur=largeur,dist.gauche=dist.gauche,band = band,
-                                   ecart = ecart,tolerance = tolerance,nbr.band = nbr.band,cropping = Cropping)
-      reac$batch = data.frame(Track = paste0("Track ",seq(nbr.band)),Standard = rep(T,nbr.band),quantity = seq(nbr.band))
+      reac$extracted = f.eat.image(reac$image,"linomat",largeur=largeur,dist.gauche=dist.gauche,band = band,
+                                   ecart = ecart,tolerance = tolerance,nbr.band = nbr.band,cropping = Cropping,double = input$Input_double)
+      reac$convention = input$Input_convention
+      reac$double = input$Input_double
+      reac$nbr.band = if(reac$double){nbr.band*2}else{nbr.band}
+      reac$batch = data.frame(Track = paste0("Track ",seq(reac$nbr.band)),Standard = rep(T,reac$nbr.band),quantity = seq(reac$nbr.band))
       colnames(reac$batch)[3] = "Quantity [AU]"
       reac$Preprocess.order = NULL
       reac$Preprocess.options = default_preprocess_options
@@ -240,30 +273,43 @@ shinyServer(function(input, output,session) {
     
 
     raster(reac$image)#,xlim= c(0,200/largeur*dim(reac$image)[2]))
+    if(reac$double){
+      abline(h=dim(reac$image)[1]/width*dist.bas)
+      abline(h=dim(reac$image)[1]/width*(width-dist.bas))
+      abline(h=dim(reac$image)[1]/width*Zf)
+    }else{
+      abline(h=dim(reac$image)[1]/width*dist.bas)
+      abline(h=dim(reac$image)[1]/width*Zf)
+    }
 
-    abline(h=dim(reac$image)[1]/width*dist.bas)
-    abline(h=dim(reac$image)[1]/width*Zf)
     for(i in c(0:(nbr.band-1))){
       abline(v=(dim(reac$image)[2]/largeur*((dist.gauche+tolerance)+i*(band+ecart))),col="green")
       abline(v=(dim(reac$image)[2]/largeur*((dist.gauche+band-tolerance)+i*(band+ecart))),col="red")
     }
   })
-  observeEvent(input$click_Input_plot_raster,{
-    # reac$dimension$Value = as.numeric(hot_to_r(input$Input_dimension)$Value)
-    # nbr.band=reac$dimension["Number of bands",]
-    # largeur = reac$dimension["Plate length [mm]",]
-    # band=dimension["Band length [mm]",]
-    # reac$dimension["First application position [mm]",] = largeur/dim(reac$image)[2]*as.numeric(input$click_Input_plot_raster$x)-band/2
-    shinyalert("Oops!", "Feature not yet implemented.", type = "error")
+  observeEvent(input$Input_plot_raster_click,{
+    reac$dimension$Value = as.numeric(hot_to_r(input$Input_dimension)$Value)
+    nbr.band=reac$dimension["Number of bands",]
+    largeur = reac$dimension["Plate length [mm]",]
+    band=reac$dimension["Band length [mm]",]
+    dist.gauche=reac$dimension["First application position [mm]",]
+    if(reac$img_click == 0){
+      reac$dimension["First application position [mm]",] = largeur/dim(reac$image)[2]*as.numeric(input$Input_plot_raster_click$x)
+      updateCheckboxInput(session,"Input_convention",value=T)
+      reac$img_click = 1
+    }else{
+      reac$dimension["Distance between tracks [mm]",] = (largeur/dim(reac$image)[2]*as.numeric(input$Input_plot_raster_click$x)-dist.gauche)/(nbr.band-1)
+      reac$img_click = 0
+    }
+    
+    # shinyalert("Oops!", "Feature not yet implemented.", type = "error")
   })
-  observeEvent(input$dblclick_Input_plot_raster,{
-    shinyalert("Oops!", "Feature not yet implemented.", type = "error")
-  })
+
   ### Preprocess ####
   output$Preprocess_plot_chrom_before = renderPlot({
     validate(need(!is.null(reac$extracted),"Extract the video densitograms."),
-             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection"))
-    width = reac$dimension["Plate width [mm]",]
+             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection"))
+    width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
     par(mar=c(3,3,2,0),mgp=c(1.5,0.5,0))
@@ -275,10 +321,10 @@ shinyServer(function(input, output,session) {
       need(input$window.size %% 2 == 1, "The window size must be an odd value."),
       need(input$window.size > input$poly.order, "The window size must be greater than the polynomial order."),
       need(input$poly.order > input$diff.order, "The polynomial order must be greater than the differential order."),
-      need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection.")
+      need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection.")
     )
     validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms."))
-    width = reac$dimension["Plate width [mm]",]
+    width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
     par(mar=c(2.5,2.5,2,0),mgp=c(1.5,0.5,0))
@@ -331,7 +377,6 @@ shinyServer(function(input, output,session) {
   
       reac$Preprocess.order = input$Preprocess.order
       reac$preprocessed = f.preprocess(reac$extracted,preprocess.order = reac$Preprocess.order,preprocess.option = reac$Preprocess.options)
-      nbr.band=reac$dimension["Number of bands",]
       reac$batch = reac$batch[,1:3]
       reac$Integration = list(PeakList = data.frame())
       reac$model=NULL
@@ -362,42 +407,49 @@ shinyServer(function(input, output,session) {
  
   
   observeEvent(input$Integration_action_auto,{
-    reac$model=list()
-    reac$Integration = list(
-      Integration_nups = input$Integration_nups,
-      Integration_ndowns = input$Integration_ndowns,
-      Integration_minpeakheight = input$Integration_minpeakheight,
-      Integration_npeaks = input$Integration_npeaks,
-      PeakList= data.frame() ## colnames() = c("Track","Channel","Start","End","Max","hRF","Height","Area")
-    )
-    reac$batch = reac$batch[,1:3]
-    width = reac$dimension["Plate width [mm]",]
-    Zf = reac$dimension["Migration front [mm]",]
-    dist.bas = reac$dimension["Distance to lower edge [mm]",]
-    
-    for(channel in seq(4)){
-      for(i in seq(nrow(reac$preprocessed))){
-        m = findpeaks(reac$preprocessed[i,,channel],
-                      nups = input$Integration_nups, ndowns = input$Integration_ndowns,
-                      zero = "0", peakpat = NULL, minpeakheight = input$Integration_minpeakheight,
-                      minpeakdistance = 1, threshold = 0, npeaks = input$Integration_npeaks, sortstr = FALSE)
-        ## colnames(reac$Integration$PeakList) = c("Track","Channel","Start","End","Max","hRF","Height","Area")
-        for(j in seq_len(nrow(m))){
-          reac$Integration$PeakList = rbind(
-            reac$Integration$PeakList,
-            c(i,channel,
-              f.index_to_hrf(m[j,4],width,dist.bas,Zf,reac$preprocessed),
-              f.index_to_hrf(m[j,3],width,dist.bas,Zf,reac$preprocessed),
-              f.index_to_hrf(m[j,2],width,dist.bas,Zf,reac$preprocessed),
-              m[j,1],sum(reac$preprocessed[i,m[j,4]:m[j,3],channel]),
-              m[j,4],m[j,3],m[j,2])
-          )
+    if(is.null(reac$preprocessed)){
+      shinyalert("Error!", "Preprocessed the chromatograms.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+    }else{
+      reac$model=list()
+      reac$Integration = list(
+        Integration_nups = input$Integration_nups,
+        Integration_ndowns = input$Integration_ndowns,
+        Integration_minpeakheight = input$Integration_minpeakheight,
+        Integration_npeaks = input$Integration_npeaks,
+        PeakList= data.frame() ## colnames() = c("Track","Channel","Start","End","Max","hRF","Height","Area")
+      )
+      reac$batch = reac$batch[,1:3]
+      width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
+      Zf = reac$dimension["Migration front [mm]",]
+      dist.bas = reac$dimension["Distance to lower edge [mm]",]
+      
+      for(channel in seq(4)){
+        for(i in seq(nrow(reac$preprocessed))){
+          m = findpeaks(reac$preprocessed[i,,channel],
+                        nups = input$Integration_nups, ndowns = input$Integration_ndowns,
+                        zero = "0", peakpat = NULL, minpeakheight = input$Integration_minpeakheight,
+                        minpeakdistance = 1, threshold = 0, npeaks = input$Integration_npeaks, sortstr = FALSE)
+          ## colnames(reac$Integration$PeakList) = c("Track","Channel","Start","End","Max","hRF","Height","Area")
+          if(!is.null(m)){
+            for(j in seq_len(nrow(m))){
+              reac$Integration$PeakList = rbind(
+                reac$Integration$PeakList,
+                c(i,channel,
+                  f.index_to_hrf(m[j,4],width,dist.bas,Zf,reac$preprocessed),
+                  f.index_to_hrf(m[j,3],width,dist.bas,Zf,reac$preprocessed),
+                  f.index_to_hrf(m[j,2],width,dist.bas,Zf,reac$preprocessed),
+                  m[j,1],sum(reac$preprocessed[i,m[j,4]:m[j,3],channel]),
+                  m[j,4],m[j,3],m[j,2])
+              )
+            }
+          }
         }
       }
+      
+      colnames(reac$Integration$PeakList) = c("Track","Channel","Start hRf","End hRf","hRf","Height","Area","Start","End","Max")
+      reac$Integration$PeakList = reac$Integration$PeakList[reac$Integration$PeakList$hRf > 0 & reac$Integration$PeakList$hRf < 100,]
     }
     
-    colnames(reac$Integration$PeakList) = c("Track","Channel","Start hRf","End hRf","hRf","Height","Area","Start","End","Max")
-    reac$Integration$PeakList = reac$Integration$PeakList[reac$Integration$PeakList$hRf > 0 & reac$Integration$PeakList$hRf < 100,]
   })
   output$PeakList = renderDataTable({
     validate(need(nrow(reac$Integration$PeakList) > 0,"Perform the integration."))
@@ -409,8 +461,8 @@ shinyServer(function(input, output,session) {
   Map(function(channel) {
     output[[paste0("Integration_plot_",channel)]] = renderPlot({
       validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms."),
-               need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$dimension["Number of bands",],"Wrong track selection."))
-      width = reac$dimension["Plate width [mm]",]
+               need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection."))
+      width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
       Zf = reac$dimension["Migration front [mm]",]
       dist.bas = reac$dimension["Distance to lower edge [mm]",]
       par(mar=c(2.5,2.5,2,0),mgp=c(1.5,0.5,0))
@@ -444,7 +496,7 @@ shinyServer(function(input, output,session) {
     if(nrow(reac$Integration$PeakList)==0){
       shinyalert("Error!", "Perform the integration first.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }else{
-      width = reac$dimension["Plate width [mm]",]
+      width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
       Zf = reac$dimension["Migration front [mm]",]
       dist.bas = reac$dimension["Distance to lower edge [mm]",]
       truc = rep(0,nrow(reac$preprocessed))
@@ -481,7 +533,7 @@ shinyServer(function(input, output,session) {
 
   
   output$Stat_batch = renderRHandsontable({
-    validate(need(!is.null(reac$batch) >3,"Extract the chromatograms."))
+    validate(need(!is.null(reac$extracted),"Extract the chromatograms."))
     reac$batch$`Quantity [AU]` = as.numeric(reac$batch$`Quantity [AU]`)
     reac$batch$Track = as.character(reac$batch$Track)
     truc = rhandsontable(reac$batch,rowHeaders = NULL) %>%
@@ -500,7 +552,7 @@ shinyServer(function(input, output,session) {
   })
   output$Stat_plot = renderPlot({
     validate(need(length(reac$model) > 0,"Select at least one peak."))
-    
+    validate(need(!is.null(input$Stat_plot_select),"Not ready yet."))
     data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,input$Stat_plot_select])
     data$x[!reac$batch$Standard] = reac$batch[,paste0("Prediction ",input$Stat_plot_select)][!reac$batch$Standard]
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = "Intensity [AU]",pch = 4,col=(!reac$batch$Standard)+1,main=input$Stat_plot_select)
@@ -510,6 +562,7 @@ shinyServer(function(input, output,session) {
   })
   output$Stat_summary = renderPrint({
     validate(need(length(reac$model) > 0,"Select at least one peak."))
+    validate(need(!is.null(input$Stat_plot_select),"Not ready yet."))
     model = reac$model[[input$Stat_plot_select]]
     print(summary(model))
     if(is.null(model$model$`I(x^2)`)){
@@ -522,19 +575,23 @@ shinyServer(function(input, output,session) {
   })
   
   observeEvent(input$Stat_remove_all,{
-    if(ncol(reac$batch) > 3){
+    if(is.null(reac$batch)){
+      shinyalert("Error!", "Extract the chromatograms.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+    }else if(ncol(reac$batch) > 3){
       reac$model = list()
       reac$batch = reac$batch[,1:3]
     }else{
-      shinyalert("Error!", "To peak to remove.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+      shinyalert("Error!", "No peak to remove.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }
   })
   observeEvent(input$Stat_remove_last,{
-    if(ncol(reac$batch) > 3){
+    if(is.null(reac$batch)){
+      shinyalert("Error!", "Extract the chromatograms.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+    }else if(ncol(reac$batch) > 3){
       reac$model[[length(reac$model)]] = NULL
       reac$batch = reac$batch[,1:(ncol(reac$batch)-2)]
     }else{
-      shinyalert("Error!", "To peak to remove.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+      shinyalert("Error!", "No peak to remove.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }
   })
   
@@ -565,7 +622,7 @@ shinyServer(function(input, output,session) {
         path <- paste0("before_preprocess_",i,'.csv')
         fs <- c(fs,path)
         truc = reac$extracted[,dim(reac$extracted)[2]:1,channel[i]]
-        width = reac$dimension["Plate width [mm]",]
+        width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
         Zf = reac$dimension["Migration front [mm]",]
         dist.bas = reac$dimension["Distance to lower edge [mm]",]
         colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
@@ -575,7 +632,7 @@ shinyServer(function(input, output,session) {
         path <- paste0("after_preprocess_",i,'.csv')
         fs <- c(fs,path)
         truc = reac$preprocessed[,dim(reac$preprocessed)[2]:1,channel[i]]
-        width = reac$dimension["Plate width [mm]",]
+        width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
         Zf = reac$dimension["Migration front [mm]",]
         dist.bas = reac$dimension["Distance to lower edge [mm]",]
         colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
@@ -588,22 +645,6 @@ shinyServer(function(input, output,session) {
     },
     contentType = "application/zip"
   )
-  output$downloadCheckpoint <- downloadHandler(
-    filename = "quanTLC.Rdata",
-    content = function(con) {
-      assign('data',list(image = reac$image,
-                         image.name = reac$image.name,
-                         batch = reac$batch,
-                         dimension = reac$dimension,
-                         extracted = reac$extracted,
-                         Preprocess.order = reac$Preprocess.order,
-                         Preprocess.options = reac$Preprocess.options,
-                         preprocessed = reac$preprocessed,
-                         Integration = reac$Integration,
-                         model=reac$model
-      ))
-      save(list='data',file=con)
-    }
-  )
+
 })
 

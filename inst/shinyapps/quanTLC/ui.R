@@ -11,16 +11,18 @@ fluidPage(
                          sidebarPanel(width=3,
                                       # h3("Input"),
                                       fileInput("Input_image","Select a chromatogram image or a Rdata file"),
-                                      actionButton("Demo_file","Load the demonstration file"),
+                                      selectInput("Demo_file","Select a demonstration file",choices = c("None",dir("www",pattern = ".Rdata")),selected="None"),
                                       # fileInput("Input_method","Rdata method file save in a previous session"),
                                       rHandsontableOutput("Input_dimension"),
                                       checkboxInput("Input_convention","Change to distance calculated from the middle of the band",F),
+                                      checkboxInput("Input_double","Chromatography from both side",F),
+                                      bsTooltip("Input_double","Experimental, by convention, the first application will be taken from the top right size and there will be the same number of band on each side."),
                                       actionButton("Input_action","Extract the video densitograms",icon=icon("flask"))
 
                          ),
                          mainPanel(width=9,
-                                   plotOutput("Input_plot_raster",click = "click_Input_plot_raster",dblclick = "dblclick_Input_plot_raster"),
-                                   bsTooltip("Input_plot_raster","Once the number of band is set, click in the middle of the first band to infere the first applciation position and double click on the last band to infere the distance between track.")
+                                   plotOutput("Input_plot_raster",click = "Input_plot_raster_click",dblclick = "Input_plot_raster_dblclick"),
+                                   bsTooltip("Input_plot_raster","Once the number of band, band length and edge cut set, click in the middle of the first band and of the last band to infere the first application position and distance between track.")
                          )
                        ),
                        sidebarLayout(
@@ -69,7 +71,7 @@ fluidPage(
                        ),
                        sidebarLayout(
                          sidebarPanel(width=6,
-                                      rHandsontableOutput("Stat_batch"),
+                                      rHandsontableOutput("Stat_batch"),hr(),
                                       uiOutput("Stat_column"),
                                       # checkboxInput("Stat_quadratic","Use quadratic regression",F),
                                       # checkboxInput("Stat_origin","Pass by the origin)",F),
@@ -87,17 +89,26 @@ fluidPage(
               tabPanel("Report",
                        sidebarLayout(
                          sidebarPanel(width=6,
-                                      checkboxGroupInput("Report_options","Include in report",choices = c("Chromatogram","Dimension table","Preprocessing options","Integration options","Statistic options","Video-densitograms","Model summary","Batch","Calibration curve"),
+                                      checkboxGroupInput("Report_options","Include in report",
+                                                         choices = c(
+                                                           "Chromatogram"
+                                                           ,"Dimension table"
+                                                           ,"Preprocessing options"
+                                                           ,"Integration options"
+                                                           ,"Video-densitograms"
+                                                           ,"Peak list"
+                                                           ,"Peak list for each sample"
+                                                           ,"Regression results"
+                                                         ),
                                                          selected = c(
                                                            "Chromatogram"
                                                            ,"Dimension table"
                                                            ,"Preprocessing options"
                                                            ,"Integration options"
-                                                           ,"Statistic options"
-                                                           ,"Model summary"
                                                            ,"Video-densitograms"
-                                                           ,"Batch"
-                                                           ,"Calibration curve"
+                                                           ,"Peak list"
+                                                           ,"Peak list for each sample"
+                                                           ,"Regression results"
                                                            )),
                                       radioButtons('reportformat', 'Document format', c('PDF', 'HTML', "MS Word"='Word'),
                                                    inline = TRUE),

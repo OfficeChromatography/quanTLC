@@ -1,7 +1,10 @@
 
-f.eat.image<-function(data,conv="linomat",largeur=200,dist.gauche=20,band=6,ecart=2,tolerance=1,cropping = 0,nbr.band=NULL,plotting=F){
+f.eat.image<-function(data,conv="linomat",largeur=200,dist.gauche=20,band=6,ecart=2,tolerance=1,cropping = 0,nbr.band=NULL,double = F){
   if(length(dim(data)) == 2){ # array coertion
     data = array(data,dim=c(dim(data),3))
+  }
+  if(double){
+    data=abind(data[(dim(data)[1]/2+1):dim(data)[1],1:dim(data)[2],],data[(dim(data)[1]/2):1,dim(data)[2]:1,],along=3)
   }
   # cropping correction
   largeur = largeur - 2 * cropping
@@ -22,16 +25,12 @@ f.eat.image<-function(data,conv="linomat",largeur=200,dist.gauche=20,band=6,ecar
       store[i+1,,j] <-apply(data[,(dim(data)[2]/largeur*((dist.gauche+tolerance)+i*(band+ecart))):(dim(data)[2]/largeur*((dist.gauche+band-tolerance)+i*(band+ecart))),j],1,mean)
     }
   }
+  if(double){
+    store = abind(store[,,1:3],store[,,4:6],along=1)
+  }
   data = store
   store = array(0,dim=c(dim(data)[1:2],4))
   store[,,1:3] = data
   store[,,4] = apply(data,1:2,mean)
-  if(plotting){
-    raster(data)
-    for(i in c(0:(nbr.band-1))){
-      abline(v=(dim(data)[2]/largeur*((dist.gauche+tolerance)+i*(band+ecart))),col="green")
-      abline(v=(dim(data)[2]/largeur*((dist.gauche+band-tolerance)+i*(band+ecart))),col="red")
-    }
-  }
   return(store)
 }
