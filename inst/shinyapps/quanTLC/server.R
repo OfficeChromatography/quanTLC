@@ -307,8 +307,8 @@ shinyServer(function(input, output,session) {
 
   ### Preprocess ####
   output$Preprocess_plot_chrom_before = renderPlot({
-    validate(need(!is.null(reac$extracted),"Extract the video densitograms."),
-             need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection"))
+    validate(need(!is.null(reac$extracted),"Extract the video densitograms."))
+    validate(need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection."))
     width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
@@ -320,10 +320,10 @@ shinyServer(function(input, output,session) {
     validate(
       need(input$window.size %% 2 == 1, "The window size must be an odd value."),
       need(input$window.size > input$poly.order, "The window size must be greater than the polynomial order."),
-      need(input$poly.order > input$diff.order, "The polynomial order must be greater than the differential order."),
-      need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection.")
+      need(input$poly.order > input$diff.order, "The polynomial order must be greater than the differential order.")
     )
     validate(need(!is.null(reac$preprocessed),"Preprocess the video densitograms."))
+    validate(need(input$Preprocess_plot_chrom_select > 0 && input$Preprocess_plot_chrom_select <= reac$nbr.band,"Wrong track selection."))
     width = reac$dimension["Plate width [mm]",];if(reac$double){width=0.5*width}
     Zf = reac$dimension["Migration front [mm]",]
     dist.bas = reac$dimension["Distance to lower edge [mm]",]
