@@ -13,7 +13,7 @@ output$Preprocess_ui_1 = renderUI({
                               href="https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter")
                 ),
                 numericInput("window.size","Size of the window",15,min=3,max=NA,step=2),
-                numericInput("poly.order","Polynomial order",1),
+                numericInput("poly.order","Polynomial order",2),
                 numericInput("diff.order","Differentiation order",0)
          ),
          column(4,

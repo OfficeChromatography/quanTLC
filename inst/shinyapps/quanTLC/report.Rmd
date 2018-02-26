@@ -136,8 +136,6 @@ if("Video-densitograms" %in% input$Report_options && !is.null(reac$preprocessed)
                  hauteur = width,Zf = Zf,dist.bas = dist.bas,reconstruct = T,main=paste0("Before preprocessing - Track ",i))
     f.plot.array(reac$preprocessed,id = i,
                  hauteur = width,Zf = Zf,dist.bas = dist.bas,reconstruct = F,main=paste0("After preprocessing - Track ",i))
-    abline(v=reac$Integration_start[i],col="green")
-    abline(v=reac$Integration_stop[i],col="red")
     abline(h=0)
   }
 }

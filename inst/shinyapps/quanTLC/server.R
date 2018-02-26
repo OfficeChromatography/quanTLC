@@ -626,7 +626,7 @@ shinyServer(function(input, output,session) {
         Zf = reac$dimension["Migration front [mm]",]
         dist.bas = reac$dimension["Distance to lower edge [mm]",]
         colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
-        write.csv(truc,file=path,row.names = F,col.names = F,sep=';')
+        write.csv(truc,file=path,row.names = F,col.names = T,sep=';')
       }
       for(i in names(channel)){
         path <- paste0("after_preprocess_",i,'.csv')
@@ -636,8 +636,17 @@ shinyServer(function(input, output,session) {
         Zf = reac$dimension["Migration front [mm]",]
         dist.bas = reac$dimension["Distance to lower edge [mm]",]
         colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
-        write.csv(truc,file=path,row.names = F,col.names = F,sep=';')
+        write.csv(truc,file=path,row.names = F,col.names = T,sep=';')
       }
+      path <- paste0('PeakList.csv')
+      fs <- c(fs,path)
+      truc = reac$Integration$PeakList
+      write.csv(truc,file=path,row.names = T,col.names = T,sep=';')
+      
+      path <- paste0('batch.csv')
+      fs <- c(fs,path)
+      truc = reac$batch
+      write.csv(truc,file=path,row.names = T,col.names = T,sep=';')
       
       tempFile <- tempfile(fileext = ".zip")
       zip(zipfile=tempFile, files=fs)
