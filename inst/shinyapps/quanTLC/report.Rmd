@@ -113,8 +113,8 @@ if("Preprocessing options" %in% input$Report_options && length(reac$Preprocess.o
   }
 ## integration options
 if("Integration options" %in% input$Report_options && !is.null(reac$Integration$Integration_nups)){ 
-  truc <- cbind(c("nups","ndowns","minpeakheight","npeaks"), 
-                unlist(reac$Integration[1:4]))
+  truc <- cbind(c("nups","ndowns","minpeakheight"), 
+                unlist(reac$Integration[1:3]))
   rownames(truc) <- seq(nrow(truc))
   kable(truc, caption = 'Integration options',col.names = c("Name","Value"))
 }
@@ -211,7 +211,7 @@ if("Regression results" %in% input$Report_options && !is.null(reac$model)){
     data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,i])
     data$x[!reac$batch$Standard] = reac$batch[,paste0("Prediction ",i)][!reac$batch$Standard]
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = "Intensity [AU]",pch = 4,col=(!reac$batch$Standard)+1,main=i)
-    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
+    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/100)
     pred <- inversePredictCalibrate(reac$model[[i]],timevalues)[,2]
     lines(pred,timevalues)
     # if(input$reportformat == 'latex'){

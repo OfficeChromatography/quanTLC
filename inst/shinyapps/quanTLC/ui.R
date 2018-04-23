@@ -15,14 +15,14 @@ fluidPage(
                                       # fileInput("Input_method","Rdata method file save in a previous session"),
                                       rHandsontableOutput("Input_dimension"),
                                       checkboxInput("Input_convention","Change to distance calculated from the middle of the band",F),
-                                      checkboxInput("Input_double","Chromatography from both side",F),
-                                      bsTooltip("Input_double","Experimental, by convention, the first application will be taken from the top right size and there will be the same number of band on each side."),
+                                      checkboxInput("Input_double","Development from both sides",F),
+                                      bsTooltip("Input_double","By convention, the first application will be taken from the top right side to obtain the same number of bands on each side."),
                                       actionButton("Input_action","Extract the video densitograms",icon=icon("flask"))
 
                          ),
                          mainPanel(width=9,
                                    plotOutput("Input_plot_raster",click = "Input_plot_raster_click",dblclick = "Input_plot_raster_dblclick"),
-                                   bsTooltip("Input_plot_raster","Once the number of band, band length and edge cut set, click in the middle of the first band and of the last band to infere the first application position and distance between track.")
+                                   bsTooltip("Input_plot_raster","Once the number of band, band length and edge cut is set, click in the middle of the first band and of the last band to calculate automatically the first application position and distance between tracks.")
                          )
                        ),
                        sidebarLayout(

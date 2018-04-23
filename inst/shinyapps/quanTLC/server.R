@@ -44,6 +44,8 @@ shinyServer(function(input, output,session) {
   source("raster.R")
   source("f.index_to_hrf.R")
   updateTextInput(session, "Integration_compound", value = "Compound")
+  
+  # observeEvent(input$help,introjs(session))
 
   reac = reactiveValues(
     image = f.read.image("www/plate_168_dev_RT_10ms.jpg"),
@@ -220,7 +222,8 @@ shinyServer(function(input, output,session) {
       dist.gauche<-dist.gauche-band/2
       ecart<-ecart-band
     }
-    if(nbr.band >= ceiling((largeur-dist.gauche)/(band+ecart))){
+    # if(nbr.band >= ceiling((largeur-dist.gauche)/(band+ecart))){
+    if(largeur < dist.gauche+band*nbr.band+ecart*(nbr.band-1)){
       shinyalert("Error!", "Too much bands.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
     }else if(nbr.band < 1){
       shinyalert("Error!", "Not enough bands.", type = "error", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
@@ -267,7 +270,7 @@ shinyServer(function(input, output,session) {
     }
     
     validate(
-      need(nbr.band < ceiling((largeur-dist.gauche)/(band+ecart)),"Too much bands."),
+      need(largeur > dist.gauche+band*nbr.band+ecart*(nbr.band-1),"Too much bands."),
       need(nbr.band >= 1,"Not enough bands.")
       )
     
@@ -390,14 +393,14 @@ shinyServer(function(input, output,session) {
       numericInput("Integration_nups","Minimum number of increasing steps before a peak is reached",10,min=1),
       numericInput("Integration_ndowns","Minimum number of decreasing steps after the peak",10,min=1),
       numericInput("Integration_minpeakheight","The minimum (absolute) height a peak has to have to be recognized as such",0.01,min=0),
-      numericInput("Integration_npeaks","The number of peaks to return",5,min=1),
+      # numericInput("Integration_npeaks","The number of peaks to return",5,min=1),
       actionButton("Integration_action_auto","Perform automatic integration",icon=icon("flask")),
       actionButton("Integration_show", "Show peak list",icon = icon("edit")),hr(),
       bsModal("IntegrationModal", "Peak list", "Integration_show", size = "large",
               # p("peak list incoming")
               dataTableOutput("PeakList")
       ),
-      numericInput("Integration_hrf_tol","hRF tolerance",5),
+      numericInput("Integration_hrf_tol","hRF range",5),
       checkboxInput("Integration_area_height","Use peak height",F)
       
     )
@@ -415,7 +418,7 @@ shinyServer(function(input, output,session) {
         Integration_nups = input$Integration_nups,
         Integration_ndowns = input$Integration_ndowns,
         Integration_minpeakheight = input$Integration_minpeakheight,
-        Integration_npeaks = input$Integration_npeaks,
+        # Integration_npeaks = input$Integration_npeaks,
         PeakList= data.frame() ## colnames() = c("Track","Channel","Start","End","Max","hRF","Height","Area")
       )
       reac$batch = reac$batch[,1:3]
@@ -428,7 +431,7 @@ shinyServer(function(input, output,session) {
           m = findpeaks(reac$preprocessed[i,,channel],
                         nups = input$Integration_nups, ndowns = input$Integration_ndowns,
                         zero = "0", peakpat = NULL, minpeakheight = input$Integration_minpeakheight,
-                        minpeakdistance = 1, threshold = 0, npeaks = input$Integration_npeaks, sortstr = FALSE)
+                        minpeakdistance = 1, threshold = 0, npeaks = 50, sortstr = FALSE)
           ## colnames(reac$Integration$PeakList) = c("Track","Channel","Start","End","Max","hRF","Height","Area")
           if(!is.null(m)){
             for(j in seq_len(nrow(m))){
@@ -445,8 +448,11 @@ shinyServer(function(input, output,session) {
           }
         }
       }
-      
-      colnames(reac$Integration$PeakList) = c("Track","Channel","Start hRf","End hRf","hRf","Height","Area","Start","End","Max")
+      if(nrow(reac$Integration$PeakList)==0){
+        shinyalert("Warning!", "No peak found, try changing the preprocessing or integration options.", type = "warning", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+      }else{
+        colnames(reac$Integration$PeakList) = c("Track","Channel","Start hRf","End hRf","hRf","Height","Area","Start","End","Max")
+      }
       reac$Integration$PeakList = reac$Integration$PeakList[reac$Integration$PeakList$hRf > 0 & reac$Integration$PeakList$hRf < 100,]
     }
     
@@ -556,7 +562,7 @@ shinyServer(function(input, output,session) {
     data = data.frame(x=reac$batch[,"Quantity [AU]"],y=reac$batch[,input$Stat_plot_select])
     data$x[!reac$batch$Standard] = reac$batch[,paste0("Prediction ",input$Stat_plot_select)][!reac$batch$Standard]
     plot(x = data$x,y=data$y,xlab = "Quantity [AU]",ylab = "Intensity [AU]",pch = 4,col=(!reac$batch$Standard)+1,main=input$Stat_plot_select)
-    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/10)
+    timevalues <- seq(min(data$y), max(data$y), by = abs(min(data$y) - max(data$y))/100)
     pred <- inversePredictCalibrate(reac$model[[input$Stat_plot_select]],timevalues)[,2]
     lines(pred,timevalues)
   })
