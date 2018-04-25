@@ -3,6 +3,9 @@ f.eat.image<-function(data,conv="linomat",largeur=200,dist.gauche=20,band=6,ecar
   if(length(dim(data)) == 2){ # array coertion
     data = array(data,dim=c(dim(data),3))
   }
+  if(dim(data)[3] == 4){# check if gray channel not already present
+    data = data[,,1:3]
+  }
   if(double){
     data=abind(data[(dim(data)[1]/2+1):dim(data)[1],1:dim(data)[2],],data[(dim(data)[1]/2):1,dim(data)[2]:1,],along=3)
   }

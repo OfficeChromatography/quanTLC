@@ -138,9 +138,9 @@ shinyServer(function(input, output,session) {
         
       
     }else{
-      if(grepl(".tif",input$Input_image$datapath,ignore.case = T)){
-        shinyalert("Warning!", "Tiff files may cause problems, you may need to convert to jpeg, bmp or png.", type = "warning", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
-      }
+      # if(grepl(".tif",input$Input_image$datapath,ignore.case = T)){
+      #   shinyalert("Warning!", "Tiff files may cause problems, you may need to convert to jpeg, bmp or png.", type = "warning", closeOnEsc = TRUE,closeOnClickOutside = TRUE)
+      # }
       reac$image =f.read.image(input$Input_image$datapath)
       reac$image.name = input$Input_image$name
       reac$convention = F
