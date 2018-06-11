@@ -393,6 +393,10 @@ shinyServer(function(input, output,session) {
   ### Integration ####
   output$Integration_ui_1 = renderUI({
     tagList(
+      h4("Peak integration"),
+      helpText(   a("Help for this feature",target="_blank",
+                    href="https://www.rdocumentation.org/packages/pracma/versions/1.9.9/topics/findpeaks")
+      ),
       numericInput("Integration_nups","Minimum number of increasing steps before a peak is reached",10,min=1),
       numericInput("Integration_ndowns","Minimum number of decreasing steps after the peak",10,min=1),
       numericInput("Integration_minpeakheight","The minimum (absolute) height a peak has to have to be recognized as such",0.01,min=0),
@@ -403,7 +407,9 @@ shinyServer(function(input, output,session) {
               # p("peak list incoming")
               dataTableOutput("PeakList")
       ),
-      numericInput("Integration_hrf_tol","hRF range",5),
+      h4("Peak selection"),
+      numericInput("Integration_hrf_tol","hRF range [pixel]",5),
+      bsTooltip("Integration_hrf_tol","Windows size in pixel for peak selection."),
       checkboxInput("Integration_area_height","Use peak height",F)
       
     )
@@ -662,6 +668,13 @@ shinyServer(function(input, output,session) {
       file.rename(tempFile, file)
     },
     contentType = "application/zip"
+  )
+  
+  output$pdf_manual <- downloadHandler(
+    filename = "quanTLC_manual.pdf",
+    content = function(file) {
+      file.copy('www/Instruction/quanTLC_manual.pdf', file)
+    }
   )
 
 })

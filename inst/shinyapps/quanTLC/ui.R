@@ -126,6 +126,8 @@ fluidPage(
                        helpText(   a("Instruction for local installation",target="_blank",
                                      href="https://github.com/DimitriF/quantlc")
                        ),
+                       h4("PDF manual"),
+                       downloadButton("pdf_manual",label = "PDF"),
                        h4("Video manual"),
                        HTML('<video src="out.mp4" controls/>')
               )
