@@ -23,8 +23,3 @@ and follow the instructions.
 #### From cran
 
 Incomming (may be)
-
-Then, run this command to launch the application
-```r
-quanTLC::run.quanTLC()
-```
