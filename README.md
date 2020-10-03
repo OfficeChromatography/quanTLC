@@ -16,22 +16,13 @@ http://134.176.7.66/quanTLC/
 
 ## Installation
 
-Install R
-https://www.r-project.org/
+Go to 
+https://github.com/OfficeChromatography/quantTLC_Installation
+and follow the instructions.
 
 #### From cran
 
 Incomming (may be)
-
-#### From github
-
-In the R console, install the devtools package with those commands
-```r
-install.packages("devtools")
-library(devtools)
-install_github("dimitrif/quanTLC")
-devtools::install_github("jrowen/rhandsontable") ## this package is available on CRAN but there is an issue, install the github version instead
-```
 
 Then, run this command to launch the application
 ```r
