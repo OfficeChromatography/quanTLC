@@ -6,7 +6,7 @@ fluidPage(
   tabsetPanel(type="pills",
               tabPanel("Input and preprocessing",
                        tags$head(tags$style(HTML(".shiny-output-error-validation {color: red;font-size: 24px}"))),
-                       useShinyalert(),
+                       # useShinyalert(),
                        sidebarLayout(
                          sidebarPanel(width=3,
                                       # h3("Input"),
