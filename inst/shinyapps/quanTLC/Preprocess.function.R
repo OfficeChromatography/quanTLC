@@ -49,15 +49,15 @@ Baseline.correction <- function(data,input){
     if(is.vector(data)){
       dim(data) = c(1,length(data))
     }
-    if(input$method == "als"){data<-baseline(data,method=input$method,lambda=input$lambda.1,p=input$p,maxit=input$maxit.1)}
-    if(input$method == "fillPeaks"){data<-baseline(data,method=input$method,lambda=input$lambda.2,hwi=input$hwi,it=input$it,int=input$int)}
-    if(input$method == "irls"){data<-baseline(data,method=input$method,lambda1=input$lambda1,lambda2=input$lambda2,maxit=input$maxit.2,wi=input$wi)}
-    if(input$method == "lowpass"){data<-baseline(data,method=input$method,steep=input$steep,half=input$half)}
-    if(input$method == "medianWindow"){data<-baseline(data,method=input$method,hwm=input$hwm,hws=input$hws,end=input$end)}
-    if(input$method == "modpolyfit"){data<-baseline(data,method=input$method,degree=input$degree,tol=input$tol,rep=input$rep)}
-    if(input$method == "peakDetection"){data<-baseline(data,method=input$method,left=input$left,right=input$right,lwin=input$lwin,rwin=input$rwin)}
-    if(input$method == "rfBaseline"){data<-baseline(data,method=input$method)}
-    if(input$method == "rollingBall"){data<-baseline(data,method=input$method,wm=input$wm,ws=input$ws)}
+    if(input$method == "als"){data<-baseline::baseline(data,method=input$method,lambda=input$lambda.1,p=input$p,maxit=input$maxit.1)}
+    if(input$method == "fillPeaks"){data<-baseline::baseline(data,method=input$method,lambda=input$lambda.2,hwi=input$hwi,it=input$it,int=input$int)}
+    if(input$method == "irls"){data<-baseline::baseline(data,method=input$method,lambda1=input$lambda1,lambda2=input$lambda2,maxit=input$maxit.2,wi=input$wi)}
+    if(input$method == "lowpass"){data<-baseline::baseline(data,method=input$method,steep=input$steep,half=input$half)}
+    if(input$method == "medianWindow"){data<-baseline::baseline(data,method=input$method,hwm=input$hwm,hws=input$hws,end=input$end)}
+    if(input$method == "modpolyfit"){data<-baseline::baseline(data,method=input$method,degree=input$degree,tol=input$tol,rep=input$rep)}
+    if(input$method == "peakDetection"){data<-baseline::baseline(data,method=input$method,left=input$left,right=input$right,lwin=input$lwin,rwin=input$rwin)}
+    if(input$method == "rfBaseline"){data<-baseline::baseline(data,method=input$method)}
+    if(input$method == "rollingBall"){data<-baseline::baseline(data,method=input$method,wm=input$wm,ws=input$ws)}
     data.tot[,,i]<-getCorrected(data)
   }
   return(data.tot)
