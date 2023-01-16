@@ -4,7 +4,7 @@
 \alias{run.quanTLC}
 \title{Function to launch the quanTLC app}
 \usage{
-run.quanTLC(port = NULL)
+run.quanTLC(port = NULL, launch.browser = T)
 }
 \arguments{
 \item{port}{if not NULL will deploy on the local network on this port, just look for the IP of the host and go for example on 192.168.1.20:port to access the app from anywhere in the network}

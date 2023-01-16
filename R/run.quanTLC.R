@@ -7,15 +7,15 @@
 ##' @export
 ##'
 
-run.quanTLC <- function(port=NULL) {
+run.quanTLC <- function(port=NULL, launch.browser=T) {
   appDir <- system.file("shinyapps", "quanTLC", package = "quanTLC")
   if (appDir == "") {
     stop("Could not find example directory. Try re-installing `mypackage`.", call. = FALSE)
   }
   if(is.null(port)){
-    shiny::runApp(appDir, display.mode = "normal",launch.browser = T)
+    shiny::runApp(appDir, display.mode = "normal",launch.browser = launch.browser)
   }else{
     shiny::runApp(appDir, display.mode = "normal",
-                  launch.browser = T,host = '0.0.0.0',port=port)
+                  launch.browser = launch.browser,host = '0.0.0.0',port=port)
   }
 }

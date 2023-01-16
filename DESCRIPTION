@@ -6,7 +6,10 @@ Author: Fichou Dimitri
 Maintainer: Fichou Dimitri <dimitrifichou@gmail.com>
 Description: Software for video densitometry analysis. The software takes one chromatogram image, dimension parameters from the sample and development steps and extract the video densitograms. Then a step of preprocessing is made (baseline correction but more eventually like peak alignment, smoothing etc...), followed by a step of peak integration. Finally, a linear or quadratic model is fit which give access to LOD, LOQ, R2, RMSE and allow to predict new samples. 
 License: GPL
-Depends: jpeg, png, tiff, abind, shiny, shinydashboard, magrittr, markdown, baseline, dtw, ptw, prospectr, plyr, shinyBS, bmp, EnvStats, pracma,shinyalert,stargazer
+Depends: rhandsontable,shinytest, testthat, jpeg, png, tiff, abind, shiny, shinydashboard, magrittr, markdown, baseline, dtw, ptw, prospectr, plyr, shinyBS, bmp, EnvStats, pracma,shinyalert,stargazer
 Encoding: UTF-8
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 7.2.3
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

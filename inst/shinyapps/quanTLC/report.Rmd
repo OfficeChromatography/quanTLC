@@ -27,7 +27,7 @@ dist.bas = dimension["Distance to lower edge [mm]",]
 # cropping correction
 largeur = largeur - 2 * Cropping
 dist.gauche = dist.gauche - Cropping
-if(input$Input_convention){ # this put everybody back to linomat convention
+if(reac$convention){ # this put everybody back to linomat convention
   dist.gauche<-dist.gauche-band/2
   ecart<-ecart-band
 }
