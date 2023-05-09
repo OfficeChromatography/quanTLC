@@ -1,5 +1,5 @@
 library(shinyBS)
-
+library(rmarkdown)
 
 report_ui = function(id){
   tabPanel("Report",
@@ -53,7 +53,7 @@ report_server <- function(id) {
       },
       content = function(file) {
         src <- normalizePath('report.Rmd')
-        out <- render('report.Rmd', switch(
+        out <- rmarkdown::render('report.Rmd', switch(
           input$reportformat,
           PDF = pdf_document(), HTML = html_document(), Word = word_document()
         ))
@@ -73,7 +73,7 @@ report_server <- function(id) {
           Zf = reac$dimension["Migration front [mm]",]
           dist.bas = reac$dimension["Distance to lower edge [mm]",]
           colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
-          write.csv(truc,file=path,row.names = F,col.names = T)
+          write.csv(truc,file=path,row.names = T)    ##F,col.names = T)
         }
         for(i in names(channel)){
           path <- paste0("after_preprocess_",i,'.csv')
@@ -83,17 +83,17 @@ report_server <- function(id) {
           Zf = reac$dimension["Migration front [mm]",]
           dist.bas = reac$dimension["Distance to lower edge [mm]",]
           colnames(truc) = paste0(round(seq(-dist.bas/(Zf-dist.bas),(width-dist.bas)/(Zf-dist.bas),length.out=dim(truc)[2]),3))
-          write.csv(truc,file=path,row.names = F,col.names = T)
+          write.csv(truc,file=path,row.names = T)    ##F,col.names = T)
         }
         path <- paste0('PeakList.csv')
         fs <- c(fs,path)
         truc = reac$Integration$PeakList
-        write.csv(truc,file=path,row.names = T,col.names = T)
+        write.csv(truc,file=path,row.names = F)   ##,col.names = T)
         
         path <- paste0('batch.csv')
         fs <- c(fs,path)
         truc = reac$batch
-        write.csv(truc,file=path,row.names = T,col.names = T)
+        write.csv(truc,file=path,row.names = F)   ##,col.names = T)
         
         tempFile <- tempfile(fileext = ".zip")
         zip(zipfile=tempFile, files=fs)
