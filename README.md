@@ -12,7 +12,7 @@ Finally, a linear or quadratic model is fit which give access to LOD, LOQ, R2, R
 
 Available on our server hosted in the Justus Liebig University of Giessen, Germany:
 
-http://shinyapps.ernaehrung.uni-giessen.de/quanTLC/
+https://shinyapps.ernaehrung.uni-giessen.de/quanTLC/
 
 ## Installation
 
