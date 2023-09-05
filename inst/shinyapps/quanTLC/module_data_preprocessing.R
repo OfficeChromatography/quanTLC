@@ -90,10 +90,10 @@ data_preprocessing_server <- function(id) {
                                      numericInput(ns("rep"),"rep: maximum number of iterations",100)
                     ),
                     conditionalPanel(condition="input.baseline=='peakDetection'",ns = ns,
-                                     numericInput(ns("left"),"left: smallest window size for peak widths",30),
-                                     numericInput(ns("right"),"right: largest window size for peak widths",300),
-                                     numericInput(ns("lwin"),"lwin: Smallest window size for minimums and medians in peak removed spectra",50),
-                                     numericInput(ns("rwin"),"rwin: Largest window size for minimums and medians in peak removed spectra",50),
+                                     numericInput(ns("left"),"left: smallest window size for peak widths",5),
+                                     numericInput(ns("right"),"right: largest window size for peak widths",100),
+                                     numericInput(ns("lwin"),"lwin: Smallest window size for minimums and medians in peak removed spectra",5),
+                                     numericInput(ns("rwin"),"rwin: Largest window size for minimums and medians in peak removed spectra",10),
                                      numericInput(ns("snminimum"),"snminimum: Minimum signal to noise ratio for accepting peaks",10)
                     ),
                     conditionalPanel(condition="input.baseline=='rollingBall'",ns = ns,
